@@ -25,16 +25,23 @@ jobs:
     - name: Download latest release
       id: download-release
       run: |
-        # Get the latest release download URL
-        DOWNLOAD_URL=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.assets[] | select(.name == "feed-reader.tar.gz") | .browser_download_url')
+        # Check if any releases exist and get the latest one
+        RELEASE_DATA=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
         
-        if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
+        if echo "$RELEASE_DATA" | jq -e '.message == "Not Found"' > /dev/null; then
           echo "No release found, building from source..."
           echo "build_from_source=true" >> $GITHUB_OUTPUT
         else
-          echo "Downloading release from: $DOWNLOAD_URL"
-          curl -L "$DOWNLOAD_URL" -o feed-reader.tar.gz
-          echo "build_from_source=false" >> $GITHUB_OUTPUT
+          DOWNLOAD_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "feed-reader.tar.gz") | .browser_download_url')
+          
+          if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
+            echo "No feed-reader.tar.gz asset found in release, building from source..."
+            echo "build_from_source=true" >> $GITHUB_OUTPUT
+          else
+            echo "Downloading release from: $DOWNLOAD_URL"
+            curl -L "$DOWNLOAD_URL" -o feed-reader.tar.gz
+            echo "build_from_source=false" >> $GITHUB_OUTPUT
+          fi
         fi
     
     - name: Setup Haskell (if building from source)
