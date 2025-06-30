@@ -57,7 +57,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Upload artifact for daily job
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: feed-reader-binary
         path: release/feed-reader.tar.gz
