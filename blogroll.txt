@@ -1,0 +1,5 @@
+https://matklad.github.io/feed.xml
+https://andrewkelley.me/rss.xml
+https://mitchellh.com/feed.xml
+https://www.dbreunig.com/feed.xml
+https://mmapped.blog/feed.xml
