@@ -1,0 +1,64 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Haskell
+      uses: haskell-actions/setup@v2
+      with:
+        ghc-version: '9.12.2'
+        cabal-version: 'latest'
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cabal/store
+          dist-newstyle
+        key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}
+        restore-keys: |
+          ${{ runner.os }}-cabal-
+    
+    - name: Update package list
+      run: cabal update
+    
+    - name: Build with optimization
+      run: cabal build --enable-optimization=2
+    
+    - name: Install to local bin
+      run: cabal install --install-method=copy --installdir=./bin
+    
+    - name: Create release archive
+      run: |
+        mkdir -p release/feed-reader
+        cp bin/blogroll release/feed-reader/
+        cp blogroll.txt release/feed-reader/
+        cp IBMPlexSans-VariableFont_wdth,wght.ttf release/feed-reader/ || echo "Font file not found, skipping"
+        cd release
+        tar -czf feed-reader.tar.gz feed-reader/
+    
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: release/feed-reader.tar.gz
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload artifact for daily job
+      uses: actions/upload-artifact@v3
+      with:
+        name: feed-reader-binary
+        path: release/feed-reader.tar.gz
+        retention-days: 90

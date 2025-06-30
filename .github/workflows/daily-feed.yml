@@ -1,0 +1,92 @@
+name: Daily Feed Update
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Daily at midnight UTC
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  generate-feed:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download latest release
+      id: download-release
+      run: |
+        # Get the latest release download URL
+        DOWNLOAD_URL=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.assets[] | select(.name == "feed-reader.tar.gz") | .browser_download_url')
+        
+        if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
+          echo "No release found, building from source..."
+          echo "build_from_source=true" >> $GITHUB_OUTPUT
+        else
+          echo "Downloading release from: $DOWNLOAD_URL"
+          curl -L "$DOWNLOAD_URL" -o feed-reader.tar.gz
+          echo "build_from_source=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Setup Haskell (if building from source)
+      if: steps.download-release.outputs.build_from_source == 'true'
+      uses: haskell-actions/setup@v2
+      with:
+        ghc-version: '9.12.2'
+        cabal-version: 'latest'
+    
+    - name: Build from source (if needed)
+      if: steps.download-release.outputs.build_from_source == 'true'
+      run: |
+        cabal update
+        cabal build --enable-optimization=2
+        cabal install --install-method=copy --installdir=./
+        mkdir -p feed-reader
+        cp blogroll feed-reader/
+        cp blogroll.txt feed-reader/
+        cp IBMPlexSans-VariableFont_wdth,wght.ttf feed-reader/ || echo "Font file not found, skipping"
+        tar -czf feed-reader.tar.gz feed-reader/
+    
+    - name: Extract and prepare
+      run: |
+        tar -xzf feed-reader.tar.gz
+        cd feed-reader
+        ls -la
+    
+    - name: Generate RSS feed HTML
+      run: |
+        cd feed-reader
+        ./blogroll
+        ls -la
+        
+        # Ensure we have the required files for GitHub Pages
+        if [ ! -f "index.html" ]; then
+          echo "Error: index.html not generated"
+          exit 1
+        fi
+        
+        # Copy font file to the root if it exists
+        if [ -f "IBMPlexSans-VariableFont_wdth,wght.ttf" ]; then
+          echo "Font file found, keeping it for web serving"
+        fi
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+    
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: './feed-reader'
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
