@@ -1,4 +1,4 @@
-# RSS Feed Reader
+# RSS Blogroll
 
 A simple Haskell-based RSS reader that aggregates feeds and generates a beautiful HTML page with automatic GitHub Pages deployment.
 
@@ -61,14 +61,20 @@ To add or remove RSS feeds:
 When you modify the Haskell code:
 
 1. Make your changes to `app/Main.hs` or `blogroll.cabal`
-2. Commit and push the changes
-3. Create a new release tag:
+2. Update the version in `blogroll.cabal` (the cabal file is the source of truth)
+3. Update `CHANGELOG.md` with release notes for the new version
+4. Commit and push the changes
+5. Create a new release using the automated script:
    ```bash
-   git tag v1.0.1
-   git push origin v1.0.1
+   ./scripts/release.sh
    ```
-4. This automatically builds and releases the new version
-5. Future daily runs will use the new release
+   This script automatically:
+   - Reads the current version from the cabal file
+   - Creates a git tag (e.g., `v1.0.1`) 
+   - Pushes the tag to trigger the release workflow
+
+6. GitHub Actions automatically builds and releases the new version
+7. Future daily runs will use the new release
 
 ## Manual Operations
 
@@ -135,9 +141,12 @@ cabal run
 
 ```
 ├── app/Main.hs              # Main Haskell application
-├── blogroll.cabal           # Cabal project configuration
+├── blogroll.cabal           # Cabal project configuration (source of truth for version)
 ├── blogroll.txt             # RSS feed URLs (one per line)
+├── CHANGELOG.md             # Release notes and version history
 ├── IBMPlexSans-VariableFont_wdth,wght.ttf  # Font file
+├── scripts/
+│   └── release.sh           # Automated release script
 ├── .github/workflows/
 │   ├── build-release.yml    # Release build workflow
 │   └── daily-feed.yml       # Daily update workflow
