@@ -22,12 +22,8 @@ The RSS reader is automatically deployed to: **https://unorsk.github.io/blogroll
 Edit `blogroll.txt` to add or remove RSS/Atom feed URLs (one per line):
 
 ```
-https://matklad.github.io/feed.xml
 https://andrewkelley.me/rss.xml
 https://mitchellh.com/feed.xml
-https://www.dbreunig.com/feed.xml
-https://mmapped.blog/feed.xml
-https://notes.eatonphil.com/rss.xml
 ```
 
 ### 2. Automated Updates
@@ -153,24 +149,6 @@ cabal run
 └── README.md                # This file
 ```
 
-## Architecture
-
-1. **Feed Fetching**: Downloads RSS/Atom feeds via HTTP
-2. **Parsing**: Uses `xml-conduit` to parse XML and extract entries
-3. **Date Handling**: Supports both RSS `pubDate` and Atom `published`/`updated` fields
-4. **Sorting**: Merges all entries and sorts by publication date (newest first)
-5. **HTML Generation**: Creates responsive HTML with embedded CSS and typography
-6. **Deployment**: GitHub Actions automatically deploys to GitHub Pages
-
-## Dependencies
-
-- `http-conduit`: HTTP client for fetching feeds
-- `xml-conduit`: XML parsing and processing
-- `time`: Date/time parsing and formatting
-- `text`: Text processing
-- `bytestring`: Binary data handling
-- `containers`: Data structures
-
 ## Troubleshooting
 
 ### Daily Job Fails
@@ -180,24 +158,6 @@ Check the workflow logs:
 gh run list --limit 3
 gh run view <failed-run-id> --log-failed
 ```
-
-Common issues:
-- Network timeout fetching feeds
-- Invalid XML in one of the feeds
-- GitHub Pages deployment permissions
-
-### Release Build Fails
-
-Ensure you have the correct permissions and the Haskell code compiles locally:
-```bash
-cabal build --enable-optimization=2
-```
-
-### Adding New Dependencies
-
-1. Add to `build-depends` in `blogroll.cabal`
-2. Import in `app/Main.hs`
-3. Create a new release tag to deploy the updated binary
 
 ## License
 
