@@ -32,14 +32,14 @@ jobs:
           echo "No release found, building from source..."
           echo "build_from_source=true" >> $GITHUB_OUTPUT
         else
-          DOWNLOAD_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "feed-reader.tar.gz") | .browser_download_url')
+          DOWNLOAD_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "blogroll.tar.gz") | .browser_download_url')
           
           if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
-            echo "No feed-reader.tar.gz asset found in release, building from source..."
+            echo "No blogroll.tar.gz asset found in release, building from source..."
             echo "build_from_source=true" >> $GITHUB_OUTPUT
           else
             echo "Downloading release from: $DOWNLOAD_URL"
-            curl -L "$DOWNLOAD_URL" -o feed-reader.tar.gz
+            curl -L "$DOWNLOAD_URL" -o blogroll.tar.gz
             echo "build_from_source=false" >> $GITHUB_OUTPUT
           fi
         fi
@@ -57,21 +57,21 @@ jobs:
         cabal update
         cabal build --enable-optimization=2
         cabal install --install-method=copy --installdir=./
-        mkdir -p feed-reader
-        cp blogroll feed-reader/
-        cp blogroll.txt feed-reader/
-        cp IBMPlexSans-VariableFont_wdth,wght.ttf feed-reader/ || echo "Font file not found, skipping"
-        tar -czf feed-reader.tar.gz feed-reader/
+        mkdir -p blogroll
+        cp blogroll blogroll/
+        cp blogroll.txt blogroll/
+        cp IBMPlexSans-VariableFont_wdth,wght.ttf blogroll/ || echo "Font file not found, skipping"
+        tar -czf blogroll.tar.gz blogroll/
     
     - name: Extract and prepare
       run: |
-        tar -xzf feed-reader.tar.gz
-        cd feed-reader
+        tar -xzf blogroll.tar.gz
+        cd blogroll
         ls -la
     
     - name: Generate RSS feed HTML
       run: |
-        cd feed-reader
+        cd blogroll
         ./blogroll
         ls -la
         
@@ -92,7 +92,7 @@ jobs:
     - name: Upload to GitHub Pages
       uses: actions/upload-pages-artifact@v3
       with:
-        path: './feed-reader'
+        path: './blogroll'
     
     - name: Deploy to GitHub Pages
       id: deployment

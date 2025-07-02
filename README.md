@@ -13,7 +13,7 @@ A simple Haskell-based RSS reader that aggregates feeds and generates a beautifu
 
 ## Live Site
 
-The RSS reader is automatically deployed to: **https://unorsk.github.io/feed/**
+The RSS reader is automatically deployed to: **https://unorsk.github.io/blogroll/**
 
 ## How It Works
 

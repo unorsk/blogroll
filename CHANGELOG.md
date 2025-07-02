@@ -1,5 +1,12 @@
 # Revision history for blogroll
 
+## 1.0.1 -- 2025-07-02
+
+* Updated project naming from "feed-reader" to "blogroll" throughout
+* Updated GitHub Actions workflows to use consistent "blogroll" naming
+* Updated release artifacts to use "blogroll.tar.gz" instead of "feed-reader.tar.gz"
+* Updated repository references in documentation
+
 ## 1.0.0 -- 2025-06-30
 
 * Initial release with full RSS/Atom feed aggregation
