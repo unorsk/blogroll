@@ -3,3 +3,4 @@ https://andrewkelley.me/rss.xml
 https://mitchellh.com/feed.xml
 https://www.dbreunig.com/feed.xml
 https://mmapped.blog/feed.xml
+https://notes.eatonphil.com/rss.xml
