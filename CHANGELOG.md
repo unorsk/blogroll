@@ -1,5 +1,9 @@
 # Revision history for blogroll
 
+## 1.0.2 -- 2025-07-03
+
+* Better css styling
+
 ## 1.0.1 -- 2025-07-02
 
 * Updated project naming from "feed-reader" to "blogroll" throughout

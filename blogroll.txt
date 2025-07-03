@@ -1,5 +1,6 @@
 https://andrewkelley.me/rss.xml
 https://mitchellh.com/feed.xml
+https://jezenthomas.com/feed.xml
 https://notes.eatonphil.com/rss.xml
 https://www.jeremykun.com/index.xml
 https://www.dbreunig.com/feed.xml

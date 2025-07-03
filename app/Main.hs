@@ -94,10 +94,10 @@ renderHtml entries =
 }
 body {
   font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  line-height: 1.6;
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
   color: #333;
 }
 h1 {
@@ -110,8 +110,8 @@ ul {
   padding: 0;
 }
 li {
-  margin: 12px 0;
-  padding: 8px;
+  padding-left: 8px;
+  padding-bottom: 8px;
   border-left: 3px solid #3498db;
   background: #f8f9fa;
 }
@@ -125,11 +125,12 @@ a:hover {
 }
 .date {
   color: #7f8c8d;
-  font-size: 0.9em;
+  font-size: 0.6em;
 }
 .source {
   color: #95a5a6;
   font-size: 0.8em;
+  padding-left: 0.5em;
 }
 </style>
 </head><body>
@@ -141,11 +142,15 @@ a:hover {
 """
   where
     renderEntry entry = T.concat
-      [ "<li><a href=\"", entryLink entry, "\">"
-      , entryTitle entry, "</a><br>"
-      , "<span class=\"date\">", T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" (entryDate entry), "</span> "
-      , "<span class=\"source\">(", entrySiteUrl entry, ")</span></li>"
+      [ "<li><div><a href=\"", entryLink entry, "\">"
+      , entryTitle entry, "</a><span class=\"source\">(", extractDomain (entrySiteUrl entry), ")</span></div>"
+      , "<div class=\"date\">", T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" (entryDate entry), "</div></li>"
       ]
+
+extractDomain :: Text -> Text
+extractDomain url =
+  let withoutProtocol = T.drop (T.length "https://") url
+  in T.takeWhile (/= '/') withoutProtocol
 
 main :: IO ()
 main = do
