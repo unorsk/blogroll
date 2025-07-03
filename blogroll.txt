@@ -6,3 +6,4 @@ https://www.jeremykun.com/index.xml
 https://www.dbreunig.com/feed.xml
 https://matklad.github.io/feed.xml
 https://mmapped.blog/feed.xml
+https://blog.trailofbits.com/index.xml
