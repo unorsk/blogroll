@@ -17,83 +17,89 @@ concurrency:
 jobs:
   generate-feed:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Download latest release
-      id: download-release
-      run: |
-        # Check if any releases exist and get the latest one
-        RELEASE_DATA=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
-        
-        if echo "$RELEASE_DATA" | jq -e '.message == "Not Found"' > /dev/null; then
-          echo "No release found, building from source..."
-          echo "build_from_source=true" >> $GITHUB_OUTPUT
-        else
-          DOWNLOAD_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "blogroll.tar.gz") | .browser_download_url')
-          
-          if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
-            echo "No blogroll.tar.gz asset found in release, building from source..."
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download latest release
+        id: download-release
+        run: |
+          # Check if any releases exist and get the latest one
+          RELEASE_DATA=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest)
+
+          if echo "$RELEASE_DATA" | jq -e '.message == "Not Found"' > /dev/null; then
+            echo "No release found, building from source..."
             echo "build_from_source=true" >> $GITHUB_OUTPUT
           else
-            echo "Downloading release from: $DOWNLOAD_URL"
-            curl -L "$DOWNLOAD_URL" -o blogroll.tar.gz
-            echo "build_from_source=false" >> $GITHUB_OUTPUT
+            DOWNLOAD_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "blogroll.tar.gz") | .browser_download_url')
+            
+            if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
+              echo "No blogroll.tar.gz asset found in release, building from source..."
+              echo "build_from_source=true" >> $GITHUB_OUTPUT
+            else
+              echo "Downloading release from: $DOWNLOAD_URL"
+              curl -L "$DOWNLOAD_URL" -o blogroll.tar.gz
+              echo "build_from_source=false" >> $GITHUB_OUTPUT
+            fi
           fi
-        fi
-    
-    - name: Setup Haskell (if building from source)
-      if: steps.download-release.outputs.build_from_source == 'true'
-      uses: haskell-actions/setup@v2
-      with:
-        ghc-version: '9.12.2'
-        cabal-version: 'latest'
-    
-    - name: Build from source (if needed)
-      if: steps.download-release.outputs.build_from_source == 'true'
-      run: |
-        cabal update
-        cabal build --enable-optimization=2
-        cabal install --install-method=copy --installdir=./
-        mkdir -p blogroll
-        cp blogroll blogroll/
-        cp blogroll.txt blogroll/
-        cp IBMPlexSans-VariableFont_wdth,wght.ttf blogroll/ || echo "Font file not found, skipping"
-        tar -czf blogroll.tar.gz blogroll/
-    
-    - name: Extract and prepare
-      run: |
-        tar -xzf blogroll.tar.gz
-        cd blogroll
-        ls -la
-    
-    - name: Generate RSS feed HTML
-      run: |
-        cd blogroll
-        ./blogroll
-        ls -la
-        
-        # Ensure we have the required files for GitHub Pages
-        if [ ! -f "index.html" ]; then
-          echo "Error: index.html not generated"
-          exit 1
-        fi
-        
-        # Copy font file to the root if it exists
-        if [ -f "IBMPlexSans-VariableFont_wdth,wght.ttf" ]; then
-          echo "Font file found, keeping it for web serving"
-        fi
-    
-    - name: Setup Pages
-      uses: actions/configure-pages@v3
-    
-    - name: Upload to GitHub Pages
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: './blogroll'
-    
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+
+      - name: Setup Haskell (if building from source)
+        if: steps.download-release.outputs.build_from_source == 'true'
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: "9.12.2"
+          cabal-version: "latest"
+
+      - name: Build from source (if needed)
+        if: steps.download-release.outputs.build_from_source == 'true'
+        run: |
+          cabal update
+          cabal build --enable-optimization=2
+          cabal install --install-method=copy --installdir=./
+          mkdir -p blogroll
+          cp blogroll blogroll/
+          cp blogroll.txt blogroll/
+          cp IBMPlexSans-VariableFont_wdth,wght.ttf blogroll/ || echo "Font file not found, skipping"
+          tar -czf blogroll.tar.gz blogroll/
+
+      - name: Extract and prepare
+        run: |
+          tar -xzf blogroll.tar.gz
+          cd blogroll
+          ls -la
+
+      - name: Generate RSS feed HTML
+        run: |
+          cd blogroll
+          ./blogroll
+          ls -la
+
+          # Ensure we have the required files for GitHub Pages
+          if [ ! -f "index.html" ]; then
+            echo "Error: index.html not generated"
+            exit 1
+          fi
+
+          # Ensure we have the required files for GitHub Pages
+          if [ ! -f "all.html" ]; then
+            echo "Error: all.html not generated"
+            exit 1
+          fi
+
+          # Copy font file to the root if it exists
+          if [ -f "IBMPlexSans-VariableFont_wdth,wght.ttf" ]; then
+            echo "Font file found, keeping it for web serving"
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./blogroll"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

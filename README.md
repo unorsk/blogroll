@@ -130,7 +130,7 @@ cabal build
 # Run the RSS reader
 cabal run
 
-# This generates index.html in the current directory
+# This generates index.html/all.html in the current directory
 ```
 
 ### Project Structure

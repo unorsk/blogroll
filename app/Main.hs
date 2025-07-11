@@ -30,10 +30,14 @@ readBlogroll path = do
 
 fetchFeed :: Text -> IO (Either String L8.ByteString)
 fetchFeed url = do
+  start <- getCurrentTime
   result <- try $ do
     request <- parseRequest (T.unpack url)
     response <- httpLBS request
     return $ getResponseBody response
+  end <- getCurrentTime
+  let duration = diffUTCTime end start
+  putStrLn $ "Fetched " ++ T.unpack url ++ " in " ++ show duration
   case result of
     Left e -> return $ Left $ show (e :: SomeException)
     Right body -> return $ Right body
@@ -78,8 +82,8 @@ parseAtomTime dateStr =
 mergeFeedEntries :: [[FeedEntry]] -> [FeedEntry]
 mergeFeedEntries = sortBy (comparing (Down . entryDate)) . concat
 
-renderHtml :: [FeedEntry] -> Text
-renderHtml entries = 
+renderHtml :: [FeedEntry] -> Text -> Text
+renderHtml entries title = 
   let entriesHtml = T.concat $ map renderEntry entries
   in """
 <!DOCTYPE html>
@@ -136,12 +140,15 @@ a:hover {
   padding-left: 0.5em;
 }
 </style>
-</head><body>
-<h1>Good stuff!</h1>
-<ul>
-""" <> entriesHtml <> """
-</ul>
-</body></html>
+</head>
+ <body>
+  <h1>""" <> title <> """</h1>
+   <ul>
+    """ <> entriesHtml <> """
+   <li><a href=\"all.html\">See all</a></li>
+   </ul>
+ </body>
+</html>
 """
   where
     renderEntry entry = T.concat
@@ -169,6 +176,10 @@ main = do
   let allEntries = mergeFeedEntries feedEntries
   putStrLn $ "Total entries: " ++ show (length allEntries)
   
-  let html = renderHtml allEntries
-  TIO.writeFile "index.html" html
-  putStrLn "Generated index.html"
+  let recent25 = take 25 allEntries
+  let recentHtml = renderHtml recent25 "Good stuff!"
+  let allHtml = renderHtml allEntries "All Posts"
+  
+  TIO.writeFile "index.html" recentHtml
+  TIO.writeFile "all.html" allHtml
+  putStrLn "Generated index.html (25 recent) and all.html"

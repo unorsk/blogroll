@@ -2,6 +2,7 @@
 node_modules
 dist-newstyle/
 index.html
+all.html
 # output
 out
 dist
