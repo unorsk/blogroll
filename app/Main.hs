@@ -83,22 +83,26 @@ renderHtml entries =
   let entriesHtml = T.concat $ map renderEntry entries
   in """
 <!DOCTYPE html>
-<html><head>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RSS Reader</title>
 <style>
 @font-face {
   font-family: 'IBM Plex Sans';
   src: url('IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-stretch: 75% 125%;
+  font-weight: 400;
 }
 body {
-  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif;
   max-width: 800px;
   margin: 0 auto;
-  padding-left: 20px;
-  padding-right: 20px;
+  /* padding-left: 0.5em; */
+  /* padding-right: 0.5em; */
   color: #333;
+  display: flex;
+  flex-flow: column;
+  align-content: center;
 }
 h1 {
   color: #2c3e50;
@@ -108,12 +112,11 @@ h1 {
 ul {
   list-style: none;
   padding: 0;
+  margin-top: 0
 }
 li {
   padding-left: 8px;
   padding-bottom: 8px;
-  border-left: 3px solid #3498db;
-  background: #f8f9fa;
 }
 a {
   color: #2980b9;
@@ -134,7 +137,7 @@ a:hover {
 }
 </style>
 </head><body>
-<h1>Latest Posts</h1>
+<h1>Good stuff!</h1>
 <ul>
 """ <> entriesHtml <> """
 </ul>

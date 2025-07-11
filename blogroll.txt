@@ -1,3 +1,4 @@
+https://www.stephendiehl.com/feed.xml
 https://andrewkelley.me/rss.xml
 https://mitchellh.com/feed.xml
 https://jezenthomas.com/feed.xml
