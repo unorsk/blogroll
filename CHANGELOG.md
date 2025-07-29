@@ -1,5 +1,10 @@
 # Revision history for blogroll
 
+## 1.0.4 -- 2025-07-29
+
+* Added favicons
+* Squarespace for some reason block if request headers are not set
+
 ## 1.0.2 -- 2025-07-03
 
 * Better css styling

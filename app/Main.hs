@@ -12,7 +12,7 @@ import Data.Time
 import Network.HTTP.Simple
 import Text.XML as XML
 import Text.XML.Cursor
-import Data.Maybe (mapMaybe, listToMaybe)
+import Data.Maybe (mapMaybe, listToMaybe, fromMaybe)
 import Data.List (sortBy, nub)
 import Data.Ord (Down(..), comparing)
 import Control.Exception (try, SomeException)
@@ -36,7 +36,11 @@ fetchFeed url = do
   start <- getCurrentTime
   result <- try $ do
     request <- parseRequest (T.unpack url)
-    response <- httpLBS request
+    let requestWithHeaders = setRequestHeaders
+          [ ("User-Agent", "Blogroll RSS Reader/1.0")
+          , ("Accept", "application/rss+xml, application/xml, text/xml")
+          ] request
+    response <- httpLBS requestWithHeaders
     return $ getResponseBody response
   end <- getCurrentTime
   let duration = diffUTCTime end start
@@ -46,10 +50,10 @@ fetchFeed url = do
     Right body -> return $ Right body
 
 parseFeed :: Text -> L8.ByteString -> [FeedEntry]
-parseFeed siteUrl xmlContent = 
+parseFeed siteUrl xmlContent =
   case parseLBS def xmlContent of
     Left _ -> []
-    Right doc -> 
+    Right doc ->
       let cursor = fromDocument doc
       in parseRssEntries siteUrl cursor ++ parseAtomEntries siteUrl cursor
 
@@ -59,9 +63,14 @@ parseRssEntries siteUrl cursor = do
   let title = T.concat $ item $// element "title" &// content
       link = T.concat $ item $// element "link" &// content
       pubDateStr = T.concat $ item $// element "pubDate" &// content
-  case parseTimeM True defaultTimeLocale "%a, %d %b %Y %H:%M:%S %Z" (T.unpack pubDateStr) of
-    Just date -> return $ FeedEntry title link date siteUrl
+  case parseRssTime (T.unpack pubDateStr) of
+    Just date -> [FeedEntry title link date siteUrl]
     Nothing -> []
+
+parseRssTime :: String -> Maybe UTCTime
+parseRssTime dateStr =
+  parseTimeM True defaultTimeLocale "%a, %d %b %Y %H:%M:%S %Z" dateStr <|>
+  parseTimeM True defaultTimeLocale "%a, %d %b %Y %H:%M:%S %z" dateStr
 
 parseAtomEntries :: Text -> Cursor -> [FeedEntry]
 parseAtomEntries siteUrl cursor = mapMaybe parseEntry (cursor $// laxElement "entry")
@@ -69,7 +78,7 @@ parseAtomEntries siteUrl cursor = mapMaybe parseEntry (cursor $// laxElement "en
     parseEntry entry = do
       let title = T.concat $ entry $// laxElement "title" &// content
           linkHref = listToMaybe $ entry $// laxElement "link" >=> attribute "href"
-          link = maybe "" id linkHref
+          link = fromMaybe "" linkHref
           published = T.concat $ entry $// laxElement "published" &// content
           updated = T.concat $ entry $// laxElement "updated" &// content
           dateStr = if T.null published then updated else published
@@ -77,7 +86,7 @@ parseAtomEntries siteUrl cursor = mapMaybe parseEntry (cursor $// laxElement "en
       return $ FeedEntry title link date siteUrl
 
 parseAtomTime :: String -> Maybe UTCTime
-parseAtomTime dateStr = 
+parseAtomTime dateStr =
   parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%S%Z" dateStr <|>
   parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" dateStr <|>
   parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%S%z" dateStr
@@ -86,7 +95,7 @@ mergeFeedEntries :: [[FeedEntry]] -> [FeedEntry]
 mergeFeedEntries = sortBy (comparing (Down . entryDate)) . concat
 
 renderHtml :: [FeedEntry] -> Text -> Text -> Text
-renderHtml entries title faviconCss = 
+renderHtml entries title faviconCss =
   let entriesHtml = T.concat $ map renderEntry entries
   in """
 <!DOCTYPE html>
@@ -97,7 +106,7 @@ renderHtml entries title faviconCss =
 <style>
 @font-face {
   font-family: 'IBM Plex Sans';
-  src: url('IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype');
+  src: url('IBMPlexSans-Regular.woff2') format('woff2');
   font-weight: 400;
 }
 body {
@@ -180,11 +189,11 @@ fetchFavicon domain = do
     Right base64 -> return $ Just base64
 
 generateDomainCssClass :: Text -> Text
-generateDomainCssClass domain = 
+generateDomainCssClass domain =
   "favicon-" <> T.map (\c -> if c `elem` ['.','-'] then '_' else c) domain
 
 generateFaviconCss :: Map.Map Text Text -> Text
-generateFaviconCss faviconMap = 
+generateFaviconCss faviconMap =
   T.concat $ map generateSingleCss (Map.toList faviconMap)
   where
     generateSingleCss (domain, base64) = T.concat
@@ -209,7 +218,7 @@ fetchAllFavicons urls = do
     favicon <- fetchFavicon domain
     return (domain, favicon)
     ) domains
-  return $ Map.fromList $ mapMaybe (\(domain, maybeFavicon) -> 
+  return $ Map.fromList $ mapMaybe (\(domain, maybeFavicon) ->
     case maybeFavicon of
       Just favicon -> Just (domain, favicon)
       Nothing -> Nothing
@@ -219,23 +228,23 @@ main :: IO ()
 main = do
   urls <- readBlogroll "blogroll.txt"
   putStrLn $ "Found " ++ show (length urls) ++ " feeds"
-  
+
   faviconMap <- fetchAllFavicons urls
   let faviconCss = generateFaviconCss faviconMap
-  
+
   feeds <- mapM fetchFeed urls
   let feedEntries = zipWith (\url result -> case result of
         Left _err -> []
         Right cont -> parseFeed url cont
         ) urls feeds
-  
+
   let allEntries = mergeFeedEntries feedEntries
   putStrLn $ "Total entries: " ++ show (length allEntries)
-  
+
   let recent25 = take 25 allEntries
   let recentHtml = renderHtml recent25 "Good stuff!" faviconCss
   let allHtml = renderHtml allEntries "All Posts" faviconCss
-  
+
   TIO.writeFile "index.html" recentHtml
   TIO.writeFile "all.html" allHtml
   putStrLn "Generated index.html (25 recent) and all.html"
