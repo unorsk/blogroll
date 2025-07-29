@@ -4,6 +4,7 @@ module Main where
 
 import Data.ByteString.Lazy.Char8 qualified as L8
 import Data.ByteString.Base64 qualified as Base64
+import Data.ByteString qualified as BS
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
@@ -94,9 +95,20 @@ parseAtomTime dateStr =
 mergeFeedEntries :: [[FeedEntry]] -> [FeedEntry]
 mergeFeedEntries = sortBy (comparing (Down . entryDate)) . concat
 
-renderHtml :: [FeedEntry] -> Text -> Text -> Text
-renderHtml entries title faviconCss =
+renderHtml :: [FeedEntry] -> Text -> Text -> Maybe Text -> Text
+renderHtml entries title faviconCss maybeFontBase64 =
   let entriesHtml = T.concat $ map renderEntry entries
+      fontFace = case maybeFontBase64 of
+        Just fontBase64 -> """@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url(data:font/woff2;base64,""" <> fontBase64 <> """) format('woff2');
+  font-weight: 400;
+}"""
+        Nothing -> """@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('IBMPlexSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+}"""
   in """
 <!DOCTYPE html>
 <html>
@@ -104,11 +116,7 @@ renderHtml entries title faviconCss =
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RSS Reader</title>
 <style>
-@font-face {
-  font-family: 'IBM Plex Sans';
-  src: url('IBMPlexSans-Regular.woff2') format('woff2');
-  font-weight: 400;
-}
+""" <> fontFace <> """
 body {
   font-family: 'IBM Plex Sans', -apple-system, sans-serif;
   max-width: 800px;
@@ -224,11 +232,22 @@ fetchAllFavicons urls = do
       Nothing -> Nothing
     ) faviconResults
 
+loadFontAsBase64 :: FilePath -> IO (Maybe Text)
+loadFontAsBase64 fontPath = do
+  result <- try $ do
+    fontBytes <- BS.readFile fontPath
+    let base64Text = TE.decodeUtf8 $ Base64.encode fontBytes
+    return base64Text
+  case result of
+    Left (_ :: SomeException) -> return Nothing
+    Right base64 -> return $ Just base64
+
 main :: IO ()
 main = do
   urls <- readBlogroll "blogroll.txt"
   putStrLn $ "Found " ++ show (length urls) ++ " feeds"
 
+  fontBase64 <- loadFontAsBase64 "IBMPlexSans-Regular.woff2"
   faviconMap <- fetchAllFavicons urls
   let faviconCss = generateFaviconCss faviconMap
 
@@ -242,8 +261,8 @@ main = do
   putStrLn $ "Total entries: " ++ show (length allEntries)
 
   let recent25 = take 25 allEntries
-  let recentHtml = renderHtml recent25 "Good stuff!" faviconCss
-  let allHtml = renderHtml allEntries "All Posts" faviconCss
+  let recentHtml = renderHtml recent25 "Good stuff!" faviconCss fontBase64
+  let allHtml = renderHtml allEntries "All Posts" faviconCss fontBase64
 
   TIO.writeFile "index.html" recentHtml
   TIO.writeFile "all.html" allHtml

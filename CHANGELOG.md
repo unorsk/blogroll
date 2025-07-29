@@ -4,6 +4,8 @@
 
 * Added favicons
 * Squarespace for some reason block if request headers are not set
+* Using a smaller font
+* Embedding the font
 
 ## 1.0.2 -- 2025-07-03
 

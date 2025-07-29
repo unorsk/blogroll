@@ -60,7 +60,7 @@ jobs:
           mkdir -p blogroll
           cp blogroll blogroll/
           cp blogroll.txt blogroll/
-          cp IBMPlexSans-VariableFont_wdth,wght.ttf blogroll/ || echo "Font file not found, skipping"
+          cp IBMPlexSans-Regular.woff2 blogroll/ || echo "Font file not found, skipping"
           tar -czf blogroll.tar.gz blogroll/
 
       - name: Extract and prepare
@@ -88,7 +88,7 @@ jobs:
           fi
 
           # Copy font file to the root if it exists
-          if [ -f "IBMPlexSans-VariableFont_wdth,wght.ttf" ]; then
+          if [ -f "IBMPlexSans-Regular.woff2" ]; then
             echo "Font file found, keeping it for web serving"
           fi
 
