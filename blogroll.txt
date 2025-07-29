@@ -10,3 +10,4 @@ https://mmapped.blog/feed.xml
 https://blog.trailofbits.com/index.xml
 https://blog.cryptographyengineering.com/feed/
 https://www.jasonwei.net/blog?format=rss
+https://ziglang.org/devlog/index.xml
