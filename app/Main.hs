@@ -3,18 +3,21 @@
 module Main where
 
 import Data.ByteString.Lazy.Char8 qualified as L8
+import Data.ByteString.Base64 qualified as Base64
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
+import Data.Text.Encoding qualified as TE
 import Data.Time
 import Network.HTTP.Simple
 import Text.XML as XML
 import Text.XML.Cursor
 import Data.Maybe (mapMaybe, listToMaybe)
-import Data.List (sortBy)
+import Data.List (sortBy, nub)
 import Data.Ord (Down(..), comparing)
 import Control.Exception (try, SomeException)
 import Control.Applicative ((<|>))
+import qualified Data.Map as Map
 
 data FeedEntry = FeedEntry
   { entryTitle :: Text
@@ -82,8 +85,8 @@ parseAtomTime dateStr =
 mergeFeedEntries :: [[FeedEntry]] -> [FeedEntry]
 mergeFeedEntries = sortBy (comparing (Down . entryDate)) . concat
 
-renderHtml :: [FeedEntry] -> Text -> Text
-renderHtml entries title = 
+renderHtml :: [FeedEntry] -> Text -> Text -> Text
+renderHtml entries title faviconCss = 
   let entriesHtml = T.concat $ map renderEntry entries
   in """
 <!DOCTYPE html>
@@ -139,6 +142,7 @@ a:hover {
   font-size: 0.8em;
   padding-left: 0.5em;
 }
+""" <> faviconCss <> """
 </style>
 </head>
  <body>
@@ -152,7 +156,7 @@ a:hover {
 """
   where
     renderEntry entry = T.concat
-      [ "<li><div><a href=\"", entryLink entry, "\">"
+      [ "<li><div><a href=\"", entryLink entry, "\" class=\"", generateDomainCssClass (extractDomain (entrySiteUrl entry)), "\">"
       , entryTitle entry, "</a><span class=\"source\">(", extractDomain (entrySiteUrl entry), ")</span></div>"
       , "<div class=\"date\">", T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" (entryDate entry), "</div></li>"
       ]
@@ -162,10 +166,62 @@ extractDomain url =
   let withoutProtocol = T.drop (T.length "https://") url
   in T.takeWhile (/= '/') withoutProtocol
 
+fetchFavicon :: Text -> IO (Maybe Text)
+fetchFavicon domain = do
+  let faviconUrl = "https://www.google.com/s2/favicons?domain=" <> domain <> "&sz=128"
+  result <- try $ do
+    request <- parseRequest (T.unpack faviconUrl)
+    response <- httpLBS request
+    let imageBytes = getResponseBody response
+    let base64Text = TE.decodeUtf8 $ Base64.encode $ L8.toStrict imageBytes
+    return base64Text
+  case result of
+    Left (_ :: SomeException) -> return Nothing
+    Right base64 -> return $ Just base64
+
+generateDomainCssClass :: Text -> Text
+generateDomainCssClass domain = 
+  "favicon-" <> T.map (\c -> if c `elem` ['.','-'] then '_' else c) domain
+
+generateFaviconCss :: Map.Map Text Text -> Text
+generateFaviconCss faviconMap = 
+  T.concat $ map generateSingleCss (Map.toList faviconMap)
+  where
+    generateSingleCss (domain, base64) = T.concat
+      [ ".", generateDomainCssClass domain, "::after {"
+      , "content: ''; "
+      , "display: inline-block; "
+      , "width: 16px; "
+      , "height: 16px; "
+      , "margin-left: 8px; "
+      , "background-image: url(data:image/png;base64,", base64, "); "
+      , "background-size: contain; "
+      , "background-repeat: no-repeat; "
+      , "vertical-align: middle; "
+      , "}\n"
+      ]
+
+fetchAllFavicons :: [Text] -> IO (Map.Map Text Text)
+fetchAllFavicons urls = do
+  let domains = nub $ map extractDomain urls
+  putStrLn $ "Fetching favicons for " ++ show (length domains) ++ " domains"
+  faviconResults <- mapM (\domain -> do
+    favicon <- fetchFavicon domain
+    return (domain, favicon)
+    ) domains
+  return $ Map.fromList $ mapMaybe (\(domain, maybeFavicon) -> 
+    case maybeFavicon of
+      Just favicon -> Just (domain, favicon)
+      Nothing -> Nothing
+    ) faviconResults
+
 main :: IO ()
 main = do
   urls <- readBlogroll "blogroll.txt"
   putStrLn $ "Found " ++ show (length urls) ++ " feeds"
+  
+  faviconMap <- fetchAllFavicons urls
+  let faviconCss = generateFaviconCss faviconMap
   
   feeds <- mapM fetchFeed urls
   let feedEntries = zipWith (\url result -> case result of
@@ -177,8 +233,8 @@ main = do
   putStrLn $ "Total entries: " ++ show (length allEntries)
   
   let recent25 = take 25 allEntries
-  let recentHtml = renderHtml recent25 "Good stuff!"
-  let allHtml = renderHtml allEntries "All Posts"
+  let recentHtml = renderHtml recent25 "Good stuff!" faviconCss
+  let allHtml = renderHtml allEntries "All Posts" faviconCss
   
   TIO.writeFile "index.html" recentHtml
   TIO.writeFile "all.html" allHtml

@@ -75,7 +75,8 @@ executable blogroll
                       time,
                       bytestring,
                       text,
-                      containers
+                      containers,
+                      base64-bytestring
 
     -- Directories containing source files.
     hs-source-dirs:   app
