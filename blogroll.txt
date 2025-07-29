@@ -9,3 +9,4 @@ https://matklad.github.io/feed.xml
 https://mmapped.blog/feed.xml
 https://blog.trailofbits.com/index.xml
 https://blog.cryptographyengineering.com/feed/
+https://www.jasonwei.net/blog?format=rss
