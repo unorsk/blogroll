@@ -18,6 +18,7 @@ import Data.List (sortBy, nub)
 import Data.Ord (Down(..), comparing)
 import Control.Exception (try, SomeException)
 import Control.Applicative ((<|>))
+import Control.Concurrent.Async (mapConcurrently)
 import qualified Data.Map as Map
 
 data FeedEntry = FeedEntry
@@ -222,7 +223,7 @@ fetchAllFavicons :: [Text] -> IO (Map.Map Text Text)
 fetchAllFavicons urls = do
   let domains = nub $ map extractDomain urls
   putStrLn $ "Fetching favicons for " ++ show (length domains) ++ " domains"
-  faviconResults <- mapM (\domain -> do
+  faviconResults <- mapConcurrently (\domain -> do
     favicon <- fetchFavicon domain
     return (domain, favicon)
     ) domains
@@ -250,8 +251,7 @@ main = do
   fontBase64 <- loadFontAsBase64 "IBMPlexSans-Regular.woff2"
   faviconMap <- fetchAllFavicons urls
   let faviconCss = generateFaviconCss faviconMap
-
-  feeds <- mapM fetchFeed urls
+  feeds <- mapConcurrently fetchFeed urls
   let feedEntries = zipWith (\url result -> case result of
         Left _err -> []
         Right cont -> parseFeed url cont

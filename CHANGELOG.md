@@ -1,5 +1,9 @@
 # Revision history for blogroll
 
+## 1.0.6 -- 2025-08-08
+
+* Fetching icons and feeds concurrently, so it's now N-times faster
+
 ## 1.0.5 -- 2025-07-29
 
 * Added favicons
