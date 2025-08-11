@@ -12,3 +12,4 @@ https://blog.cryptographyengineering.com/feed/
 https://www.jasonwei.net/blog?format=rss
 https://ziglang.org/devlog/index.xml
 https://ziglang.org/news/index.xml
+https://chrispenner.ca/atom.xml
