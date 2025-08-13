@@ -16,6 +16,28 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
+library
+  import:           warnings
+  exposed-modules:
+    Blogroll.Html
+    Blogroll.Feed
+    Blogroll.Opml
+    Blogroll.Type
+    Blogroll.Fetch
+
+  build-depends:      base ^>=4.21.0.0,
+                      http-conduit,
+                      xml-conduit,
+                      time,
+                      bytestring,
+                      text,
+                      containers,
+                      base64-bytestring,
+                      async
+
+  hs-source-dirs:   src/
+  default-language: GHC2024
+
 executable blogroll
     import:           warnings
 
@@ -29,7 +51,8 @@ executable blogroll
                       text,
                       containers,
                       base64-bytestring,
-                      async
+                      async,
+                      blogroll
 
     hs-source-dirs:   app
 
