@@ -66,6 +66,30 @@ readBlogrollOpml path = do
           entries = parseOpmlEntries cursor
        in return $ OpmlFeed titleText ownerNameText ownerEmailText entries
 
+fetchBlogrollOpml :: Text -> IO OpmlFeed
+fetchBlogrollOpml urlOrPath = do
+  if "http://" `T.isPrefixOf` urlOrPath || "https://" `T.isPrefixOf` urlOrPath
+    then do
+      -- It's a URL, fetch it
+      result <- fetchFeed urlOrPath
+      case result of
+        Left err -> error $ "Failed to fetch OPML from URL: " ++ err
+        Right xmlContent -> parseOpmlContent xmlContent
+    else do
+      -- It's a local file path
+      readBlogrollOpml (T.unpack urlOrPath)
+  where
+    parseOpmlContent xmlContent = 
+      case parseLBS def xmlContent of
+        Left err -> error $ "Failed to parse OPML: " ++ show err
+        Right doc ->
+          let cursor = fromDocument doc
+              titleText = T.concat $ cursor $// element "title" &// content
+              ownerNameText = T.concat $ cursor $// element "ownerName" &// content
+              ownerEmailText = T.concat $ cursor $// element "ownerEmail" &// content
+              entries = parseOpmlEntries cursor
+           in return $ OpmlFeed titleText ownerNameText ownerEmailText entries
+
 parseOpmlEntries :: Cursor -> [OmplFeedEntry]
 parseOpmlEntries cursor = do
   outline <- cursor $// element "outline"
@@ -437,8 +461,8 @@ main = do
       mapM_ (\url -> putStrLn $ "Failed to fetch: " ++ T.unpack url) failedFeeds
       opmlXml <- generateOpmlXml validFeeds
       TIO.putStrLn opmlXml
-    _ -> do
-      opmlFeed <- readBlogrollOpml "blogroll.opml.xml"
+    [opmlPath] -> do
+      opmlFeed <- fetchBlogrollOpml (T.pack opmlPath)
       putStrLn $ "Found " ++ show (length opmlFeed.entries) ++ " feeds"
       let urls = map (\entry -> entry.url) opmlFeed.entries
 
@@ -465,3 +489,7 @@ main = do
       TIO.writeFile "index.html" recentHtml
       TIO.writeFile "all.html" allHtml
       putStrLn "Generated index.html (25 recent) and all.html"
+    _ -> do
+      putStrLn "Usage:"
+      putStrLn "  blogroll <opml-file-or-url>    Generate HTML from OPML file or URL"
+      putStrLn "  blogroll --generate-opml       Generate OPML from URLs on stdin"
