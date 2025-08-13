@@ -6,7 +6,7 @@ module Blogroll.Html where
 
 import Blogroll.Feed (mergeFeedEntries, parseFeed)
 import Blogroll.Fetch (extractDomain, fetchAllFavicons, fetchFeed)
-import Blogroll.Type (FeedEntry (..), OpmlFeed (..))
+import Blogroll.Type (FeedEntry (..), OpmlFeed (..), url)
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Exception (SomeException, try)
 import Data.ByteString qualified as BS
@@ -55,8 +55,9 @@ loadFontAsBase64 fontPath = do
     Left (_ :: SomeException) -> return Nothing
     Right base64 -> return $ Just base64
 
-renderAll :: [Text] -> OpmlFeed -> IO ()
-renderAll urls opmlFeed = do
+renderAll :: OpmlFeed -> IO ()
+renderAll opmlFeed = do
+  let urls = map (\entry -> entry.url) opmlFeed.entries
   fontBase64 <- loadFontAsBase64 "IBMPlexSans-Regular.woff2"
   faviconMap <- fetchAllFavicons urls
   let faviconCss = generateFaviconCss faviconMap

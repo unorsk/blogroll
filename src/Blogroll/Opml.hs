@@ -3,7 +3,7 @@
 module Blogroll.Opml where
 
 import Blogroll.Fetch (fetchFeed)
-import Blogroll.Type (FeedType (..), OmplFeedEntry (..), OpmlFeed (..))
+import Blogroll.Type (FeedType (..), OpmlFeed (..), OpmlFeedEntry (..))
 import Data.ByteString.Lazy.Char8 qualified as L8
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Text (Text)
@@ -49,7 +49,7 @@ fetchBlogrollOpml urlOrPath = do
               entries = parseOpmlEntries cursor
            in return $ OpmlFeed titleText ownerNameText ownerEmailText entries
 
-parseOpmlEntries :: Cursor -> [OmplFeedEntry]
+parseOpmlEntries :: Cursor -> [OpmlFeedEntry]
 parseOpmlEntries cursor = do
   outline <- cursor $// element "outline"
   let typeAttr = fromMaybe "" $ listToMaybe $ outline $| attribute "type"
@@ -57,7 +57,7 @@ parseOpmlEntries cursor = do
       titleAttr = fromMaybe "" $ listToMaybe $ outline $| attribute "title"
       urlAttr = fromMaybe "" $ listToMaybe $ outline $| attribute "xmlUrl"
   if typeAttr == "rss" && not (T.null urlAttr)
-    then [OmplFeedEntry RSS textAttr titleAttr urlAttr]
+    then [OpmlFeedEntry RSS textAttr titleAttr urlAttr]
     else []
 
 generateOpmlXml :: [(FeedType, Text, Text, Text)] -> IO Text

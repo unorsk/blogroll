@@ -1,6 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Blogroll.Type (FeedEntry (..), OpmlFeed (..), FeedType (..), OmplFeedEntry (..)) where
+module Blogroll.Type (FeedEntry (..), OpmlFeed (..), FeedType (..), OpmlFeedEntry (..)) where
 
 import Data.Text (Text)
 import Data.Time (UTCTime)
@@ -13,11 +13,11 @@ data OpmlFeed = OpmlFeed
     -- <dateModified>Mon, 11 Aug 2025 08:01:37 GMT</dateModified>
     ownerName :: Text,
     ownerEmail :: Text,
-    entries :: [OmplFeedEntry]
+    entries :: [OpmlFeedEntry]
   }
   deriving (Show, Eq)
 
-data OmplFeedEntry = OmplFeedEntry
+data OpmlFeedEntry = OpmlFeedEntry
   { feedType :: FeedType,
     text :: Text,
     title :: Text,

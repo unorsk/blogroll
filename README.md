@@ -19,12 +19,12 @@ The RSS reader is automatically deployed to: **https://unorsk.github.io/blogroll
 
 ### 1. Feed Configuration
 
-Edit `blogroll.opml.xmp` to add or remove RSS/Atom feeds.
+Edit `blogroll.opml.xml` to add or remove RSS/Atom feeds.
 
-Or generating it it with blogroll
+Or generating it with blogroll
 
 ```
-cat blogroll.txt | cabal run blogroll -- --generate-opml > blogroll.opml
+cat blogroll.txt | cabal run blogroll -- --generate-opml > blogroll.opml.xml
 ```
 
 ### 2. Automated Updates
