@@ -26,6 +26,13 @@ https://andrewkelley.me/rss.xml
 https://mitchellh.com/feed.xml
 ```
 
+
+Generating the OMPL file
+
+```
+cat blogroll.txt | cabal run blogroll -- --generate-opml > blogroll.opml
+```
+
 ### 2. Automated Updates
 
 The system uses two GitHub Actions workflows:

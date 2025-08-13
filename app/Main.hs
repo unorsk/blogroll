@@ -21,6 +21,7 @@ import Data.Text.Encoding qualified as TE
 import Data.Text.IO qualified as TIO
 import Data.Time
 import Network.HTTP.Simple
+import System.Environment (getArgs)
 import Text.XML as XML
 import Text.XML.Cursor
 
@@ -63,15 +64,15 @@ readBlogrollOpml path = do
           ownerNameText = T.concat $ cursor $// element "ownerName" &// content
           ownerEmailText = T.concat $ cursor $// element "ownerEmail" &// content
           entries = parseOpmlEntries cursor
-      in return $ OpmlFeed titleText ownerNameText ownerEmailText entries
+       in return $ OpmlFeed titleText ownerNameText ownerEmailText entries
 
 parseOpmlEntries :: Cursor -> [OmplFeedEntry]
 parseOpmlEntries cursor = do
   outline <- cursor $// element "outline"
-  let typeAttr = T.concat $ outline >=> attribute "type"
-      textAttr = T.concat $ outline >=> attribute "text"
-      titleAttr = T.concat $ outline >=> attribute "title"
-      urlAttr = T.concat $ outline >=> attribute "xmlUrl"
+  let typeAttr = T.concat $ outline $// element "type" &// content
+      textAttr = T.concat $ outline $// element "text" &// content
+      titleAttr = T.concat $ outline $// element "title" &// content
+      urlAttr = T.concat $ outline $// element "xmlUrl" &// content
   if typeAttr == "rss" && not (T.null urlAttr)
     then [OmplFeedEntry RSS textAttr titleAttr urlAttr]
     else []
@@ -327,32 +328,109 @@ loadFontAsBase64 fontPath = do
     Left (_ :: SomeException) -> return Nothing
     Right base64 -> return $ Just base64
 
+readUrlsFromStdin :: IO [Text]
+readUrlsFromStdin = do
+  input <- TIO.getContents
+  return $ filter (not . T.null) $ map T.strip $ T.lines input
+
+fetchFeedInfo :: Text -> IO (Maybe (FeedType, Text, Text, Text))
+fetchFeedInfo url = do
+  result <- fetchFeed url
+  case result of
+    Left _err -> return Nothing
+    Right xmlContent -> do
+      case parseLBS def xmlContent of
+        Left _ -> return Nothing
+        Right doc -> do
+          let cursor = fromDocument doc
+              -- RSS feed detection and parsing
+              rssTitle = T.concat $ cursor $// element "channel" &/ element "title" &// content
+              rssDescription = T.concat $ cursor $// element "channel" &/ element "description" &// content
+              
+              -- Atom feed detection and parsing - use laxElement for namespace issues
+              atomTitle = T.concat $ cursor $// laxElement "feed" &/ laxElement "title" &// content
+              atomSubtitle = T.concat $ cursor $// laxElement "feed" &/ laxElement "subtitle" &// content
+              
+              
+              -- Determine feed type and extract info
+              (feedType, title, description) = 
+                if not (T.null rssTitle)
+                  then (RSS, rssTitle, rssDescription)
+                  else if not (T.null atomTitle)
+                    then (ATOM, atomTitle, atomSubtitle)
+                    else (RSS, "", "")
+          
+          if T.null title
+            then return Nothing
+            else return $ Just (feedType, title, description, url)
+
+generateOpmlXml :: [(FeedType, Text, Text, Text)] -> IO Text
+generateOpmlXml feedInfos = do
+  now <- getCurrentTime
+  let dateModified = T.pack $ formatTime defaultTimeLocale "%a, %d %b %Y %H:%M:%S GMT" now
+      outlines = T.concat $ map generateOutline feedInfos
+  return $
+    T.concat
+      [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n",
+        "<opml version=\"1.0\">\n",
+        "  <head>\n",
+        "    <title></title>\n",
+        "    <dateModified>",
+        dateModified,
+        "</dateModified>\n",
+        "    <ownerName></ownerName>\n",
+        "    <ownerEmail></ownerEmail>\n",
+        "  </head>\n",
+        "  <body>\n",
+        outlines,
+        "  </body>\n",
+        "</opml>\n"
+      ]
+  where
+    generateOutline (feedType, title, description, url) =
+      let typeStr = case feedType of
+            RSS -> "rss"
+            ATOM -> "rss"  -- OPML spec typically uses "rss" for both
+      in T.concat
+        ["    <outline type=\"", typeStr, "\" text=\"", description, "\" title=\"", title, "\" xmlUrl=\"", url, "\" />\n"]
+
 main :: IO ()
 main = do
-  opmlFeed <- readBlogrollOpml "blogroll.opml"
-  putStrLn $ "Found " ++ show (length opmlFeed.entries) ++ " feeds"
-  let urls = map (\entry -> entry.url) opmlFeed.entries
+  args <- getArgs
+  case args of
+    ["--generate-opml"] -> do
+      urls <- readUrlsFromStdin
+      putStrLn $ "Fetching info for " ++ show (length urls) ++ " feeds"
+      feedInfos <- mapConcurrently fetchFeedInfo urls
+      let validFeeds = mapMaybe id feedInfos
+      putStrLn $ "Successfully fetched " ++ show (length validFeeds) ++ " feeds"
+      opmlXml <- generateOpmlXml validFeeds
+      TIO.putStrLn opmlXml
+    _ -> do
+      opmlFeed <- readBlogrollOpml "blogroll.opml"
+      putStrLn $ "Found " ++ show (length opmlFeed.entries) ++ " feeds"
+      let urls = map (\entry -> entry.url) opmlFeed.entries
 
-  fontBase64 <- loadFontAsBase64 "IBMPlexSans-Regular.woff2"
-  faviconMap <- fetchAllFavicons urls
-  let faviconCss = generateFaviconCss faviconMap
-  feeds <- mapConcurrently fetchFeed urls
-  let feedEntries =
-        zipWith
-          ( \url result -> case result of
-              Left _err -> []
-              Right cont -> parseFeed url cont
-          )
-          urls
-          feeds
+      fontBase64 <- loadFontAsBase64 "IBMPlexSans-Regular.woff2"
+      faviconMap <- fetchAllFavicons urls
+      let faviconCss = generateFaviconCss faviconMap
+      feeds <- mapConcurrently fetchFeed urls
+      let feedEntries =
+            zipWith
+              ( \url result -> case result of
+                  Left _err -> []
+                  Right cont -> parseFeed url cont
+              )
+              urls
+              feeds
 
-  let allEntries = mergeFeedEntries feedEntries
-  putStrLn $ "Total entries: " ++ show (length allEntries)
+      let allEntries = mergeFeedEntries feedEntries
+      putStrLn $ "Total entries: " ++ show (length allEntries)
 
-  let recent25 = take 25 allEntries
-  let recentHtml = renderHtml recent25 "Good stuff!" faviconCss fontBase64
-  let allHtml = renderHtml allEntries "All Posts" faviconCss fontBase64
+      let recent25 = take 25 allEntries
+      let recentHtml = renderHtml recent25 "Good stuff!" faviconCss fontBase64
+      let allHtml = renderHtml allEntries "All Posts" faviconCss fontBase64
 
-  TIO.writeFile "index.html" recentHtml
-  TIO.writeFile "all.html" allHtml
-  putStrLn "Generated index.html (25 recent) and all.html"
+      TIO.writeFile "index.html" recentHtml
+      TIO.writeFile "all.html" allHtml
+      putStrLn "Generated index.html (25 recent) and all.html"
