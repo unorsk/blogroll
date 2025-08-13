@@ -9,7 +9,7 @@ import Blogroll.Html (renderAll)
 import Blogroll.Opml (fetchBlogrollOpml, fetchFeedInfo, generateOpmlXml)
 import Blogroll.Type (OpmlFeed (..))
 import Control.Concurrent.Async (mapConcurrently)
-import Data.Maybe (mapMaybe)
+import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
@@ -24,7 +24,7 @@ main = do
       putStrLn $ "Fetching info for " ++ show (length urls) ++ " feeds"
       feedInfos <- mapConcurrently fetchFeedInfo urls
       let results = zip urls feedInfos
-          validFeeds = mapMaybe id feedInfos
+          validFeeds = catMaybes feedInfos
           failedFeeds = [url | (url, Nothing) <- results]
       putStrLn $ "Successfully fetched " ++ show (length validFeeds) ++ " feeds"
       mapM_ (\url -> putStrLn $ "Failed to fetch: " ++ T.unpack url) failedFeeds
