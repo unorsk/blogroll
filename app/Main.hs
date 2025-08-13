@@ -69,10 +69,10 @@ readBlogrollOpml path = do
 parseOpmlEntries :: Cursor -> [OmplFeedEntry]
 parseOpmlEntries cursor = do
   outline <- cursor $// element "outline"
-  let typeAttr = T.concat $ outline $// element "type" &// content
-      textAttr = T.concat $ outline $// element "text" &// content
-      titleAttr = T.concat $ outline $// element "title" &// content
-      urlAttr = T.concat $ outline $// element "xmlUrl" &// content
+  let typeAttr = fromMaybe "" $ listToMaybe $ outline $| attribute "type"
+      textAttr = fromMaybe "" $ listToMaybe $ outline $| attribute "text"
+      titleAttr = fromMaybe "" $ listToMaybe $ outline $| attribute "title"
+      urlAttr = fromMaybe "" $ listToMaybe $ outline $| attribute "xmlUrl"
   if typeAttr == "rss" && not (T.null urlAttr)
     then [OmplFeedEntry RSS textAttr titleAttr urlAttr]
     else []
@@ -459,8 +459,8 @@ main = do
       putStrLn $ "Total entries: " ++ show (length allEntries)
 
       let recent25 = take 25 allEntries
-      let recentHtml = renderHtml recent25 "Good stuff!" faviconCss fontBase64
-      let allHtml = renderHtml allEntries "All Posts" faviconCss fontBase64
+      let recentHtml = renderHtml recent25 opmlFeed.title faviconCss fontBase64
+      let allHtml = renderHtml allEntries (opmlFeed.title <> " - All Posts") faviconCss fontBase64
 
       TIO.writeFile "index.html" recentHtml
       TIO.writeFile "all.html" allHtml
