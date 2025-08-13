@@ -343,26 +343,54 @@ fetchFeedInfo url = do
         Left _ -> return Nothing
         Right doc -> do
           let cursor = fromDocument doc
-              -- RSS feed detection and parsing
-              rssTitle = T.concat $ cursor $// element "channel" &/ element "title" &// content
-              rssDescription = T.concat $ cursor $// element "channel" &/ element "description" &// content
-              
-              -- Atom feed detection and parsing - use laxElement for namespace issues
-              atomTitle = T.concat $ cursor $// laxElement "feed" &/ laxElement "title" &// content
-              atomSubtitle = T.concat $ cursor $// laxElement "feed" &/ laxElement "subtitle" &// content
-              
-              
-              -- Determine feed type and extract info
-              (feedType, title, description) = 
-                if not (T.null rssTitle)
-                  then (RSS, rssTitle, rssDescription)
-                  else if not (T.null atomTitle)
-                    then (ATOM, atomTitle, atomSubtitle)
-                    else (RSS, "", "")
-          
-          if T.null title
-            then return Nothing
-            else return $ Just (feedType, title, description, url)
+
+          -- Try RSS parsing first
+          case tryRssParsing cursor of
+            Just (title, description) -> return $ Just (RSS, title, description, url)
+            Nothing ->
+              -- If RSS fails, try Atom parsing
+              case tryAtomParsing cursor of
+                Just (title, description) -> return $ Just (ATOM, title, description, url)
+                Nothing -> return Nothing
+
+tryRssParsing :: Cursor -> Maybe (Text, Text)
+tryRssParsing cursor = do
+  let rssTitle = T.concat $ cursor $// element "channel" &/ element "title" &// content
+      rssDescription = T.concat $ cursor $// element "channel" &/ element "description" &// content
+  if T.null rssTitle
+    then Nothing
+    else Just (rssTitle, rssDescription)
+
+tryAtomParsing :: Cursor -> Maybe (Text, Text)
+tryAtomParsing cursor = do
+  -- Look for Atom elements by checking if we have elements with Atom namespace
+  let allElements = cursor $// anyElement
+      hasAtomNamespace =
+        any
+          ( \c -> case node c of
+              NodeElement e ->
+                elementName e == Name "title" (Just "http://www.w3.org/2005/Atom") Nothing
+                  || elementName e == Name "feed" (Just "http://www.w3.org/2005/Atom") Nothing
+              _ -> False
+          )
+          allElements
+  if hasAtomNamespace
+    then do
+      -- Extract title directly from atom title elements
+      let atomTitles =
+            [ content
+            | c <- cursor $// anyElement,
+              case node c of
+                NodeElement e -> elementName e == Name "title" (Just "http://www.w3.org/2005/Atom") Nothing
+                _ -> False,
+              content <- c $// content
+            ]
+          atomTitle = T.concat $ take 1 atomTitles
+          atomSubtitle = "" -- Atom feeds often don't have subtitles
+      if T.null atomTitle
+        then Nothing
+        else Just (atomTitle, atomSubtitle)
+    else Nothing
 
 generateOpmlXml :: [(FeedType, Text, Text, Text)] -> IO Text
 generateOpmlXml feedInfos = do
@@ -390,9 +418,9 @@ generateOpmlXml feedInfos = do
     generateOutline (feedType, title, description, url) =
       let typeStr = case feedType of
             RSS -> "rss"
-            ATOM -> "rss"  -- OPML spec typically uses "rss" for both
-      in T.concat
-        ["    <outline type=\"", typeStr, "\" text=\"", description, "\" title=\"", title, "\" xmlUrl=\"", url, "\" />\n"]
+            ATOM -> "rss" -- OPML spec typically uses "rss" for both
+       in T.concat
+            ["    <outline type=\"", typeStr, "\" text=\"", description, "\" title=\"", title, "\" xmlUrl=\"", url, "\" />\n"]
 
 main :: IO ()
 main = do
@@ -402,12 +430,15 @@ main = do
       urls <- readUrlsFromStdin
       putStrLn $ "Fetching info for " ++ show (length urls) ++ " feeds"
       feedInfos <- mapConcurrently fetchFeedInfo urls
-      let validFeeds = mapMaybe id feedInfos
+      let results = zip urls feedInfos
+          validFeeds = mapMaybe id feedInfos
+          failedFeeds = [url | (url, Nothing) <- results]
       putStrLn $ "Successfully fetched " ++ show (length validFeeds) ++ " feeds"
+      mapM_ (\url -> putStrLn $ "Failed to fetch: " ++ T.unpack url) failedFeeds
       opmlXml <- generateOpmlXml validFeeds
       TIO.putStrLn opmlXml
     _ -> do
-      opmlFeed <- readBlogrollOpml "blogroll.opml"
+      opmlFeed <- readBlogrollOpml "blogroll.opml.xml"
       putStrLn $ "Found " ++ show (length opmlFeed.entries) ++ " feeds"
       let urls = map (\entry -> entry.url) opmlFeed.entries
 

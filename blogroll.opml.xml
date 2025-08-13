@@ -1,40 +1,39 @@
-Fetching info for 15 feeds
-Fetched https://jezenthomas.com/feed.xml in 0.115574s
-Fetched https://matklad.github.io/feed.xml in 0.130404s
-Fetched https://chrispenner.ca/atom.xml in 0.156556s
-Fetched https://mitchellh.com/feed.xml in 0.176183s
-Fetched https://www.dbreunig.com/feed.xml in 0.214939s
-Fetched https://ziglang.org/news/index.xml in 0.215119s
-Fetched https://mmapped.blog/feed.xml in 0.26078s
-Fetched https://www.jeremykun.com/index.xml in 0.288206s
-Fetched https://ziglang.org/devlog/index.xml in 0.287577s
-Fetched https://blog.cryptographyengineering.com/feed/ in 0.385578s
-Fetched https://blog.trailofbits.com/index.xml in 0.417733s
-Fetched https://www.jasonwei.net/blog?format=rss in 0.458779s
-Fetched https://andrewkelley.me/rss.xml in 0.473426s
-Fetched https://notes.eatonphil.com/rss.xml in 1.081286s
-Fetched https://www.stephendiehl.com/feed.xml in 2.664205s
-Successfully fetched 11 feeds
 <?xml version="1.0" encoding="UTF-8"?>
 <opml version="1.0">
   <head>
     <title></title>
-    <dateModified>Wed, 13 Aug 2025 12:42:49 GMT</dateModified>
+    <dateModified>Wed, 13 Aug 2025 13:05:31 GMT</dateModified>
     <ownerName></ownerName>
     <ownerEmail></ownerEmail>
   </head>
   <body>
-    <outline type="rss" text="Personal Blog" title="Stephen Diehl" xmlUrl="https://www.stephendiehl.com/feed.xml" />
-    <outline type="rss" text="My personal website - thoughts, project demos, research." title="Andrew Kelley" xmlUrl="https://andrewkelley.me/rss.xml" />
-    <outline type="rss" text="Mitchell Hashimoto's personal website." title="Mitchell Hashimoto" xmlUrl="https://mitchellh.com/feed.xml" />
-    <outline type="rss" text="Thoughts on Haskell, Business, Unix, and more." title="jezenthomas.com" xmlUrl="https://jezenthomas.com/feed.xml" />
-    <outline type="rss" text="Notes on software development" title="Notes on software development" xmlUrl="https://notes.eatonphil.com/rss.xml" />
-    <outline type="rss" text="Recent content on Math ∩ Programming" title="Math ∩ Programming" xmlUrl="https://www.jeremykun.com/index.xml" />
-    <outline type="rss" text="Recent content on The Trail of Bits Blog" title="The Trail of Bits Blog" xmlUrl="https://blog.trailofbits.com/index.xml" />
-    <outline type="rss" text="Some random thoughts about crypto. Notes from a course I teach. Pictures of my dachshunds." title="A Few Thoughts on Cryptographic Engineering" xmlUrl="https://blog.cryptographyengineering.com/feed/" />
-    <outline type="rss" text="" title="Blog - Jason Wei" xmlUrl="https://www.jasonwei.net/blog?format=rss" />
-    <outline type="rss" text="Devlog" title="Zig Devlog" xmlUrl="https://ziglang.org/devlog/index.xml" />
-    <outline type="rss" text="Recent news" title="Ziglang.org News" xmlUrl="https://ziglang.org/news/index.xml" />
+    <outline type="rss" text="Personal Blog" title="Stephen Diehl"
+      xmlUrl="https://www.stephendiehl.com/feed.xml" />
+    <outline type="rss" text="My personal website - thoughts, project demos, research."
+      title="Andrew Kelley" xmlUrl="https://andrewkelley.me/rss.xml" />
+    <outline type="rss" text="Mitchell Hashimoto's personal website." title="Mitchell Hashimoto"
+      xmlUrl="https://mitchellh.com/feed.xml" />
+    <outline type="rss" text="Thoughts on Haskell, Business, Unix, and more."
+      title="jezenthomas.com" xmlUrl="https://jezenthomas.com/feed.xml" />
+    <outline type="rss" text="Notes on software development" title="Notes on software development"
+      xmlUrl="https://notes.eatonphil.com/rss.xml" />
+    <outline type="rss" text="Recent content on Math ∩ Programming" title="Math ∩ Programming"
+      xmlUrl="https://www.jeremykun.com/index.xml" />
+    <outline type="rss" text="" title="Drew Breunig" xmlUrl="https://www.dbreunig.com/feed.xml" />
+    <outline type="rss" text="" title="matklad" xmlUrl="https://matklad.github.io/feed.xml" />
+    <outline type="rss" text="" title="MMapped blog" xmlUrl="https://mmapped.blog/feed.xml" />
+    <outline type="rss" text="Recent content on The Trail of Bits Blog"
+      title="The Trail of Bits Blog" xmlUrl="https://blog.trailofbits.com/index.xml" />
+    <outline type="rss"
+      text="Some random thoughts about crypto. Notes from a course I teach. Pictures of my dachshunds."
+      title="A Few Thoughts on Cryptographic Engineering"
+      xmlUrl="https://blog.cryptographyengineering.com/feed/" />
+    <outline type="rss" text="" title="Blog - Jason Wei"
+      xmlUrl="https://www.jasonwei.net/blog?format=rss" />
+    <outline type="rss" text="Devlog" title="Zig Devlog"
+      xmlUrl="https://ziglang.org/devlog/index.xml" />
+    <outline type="rss" text="Recent news" title="Ziglang.org News"
+      xmlUrl="https://ziglang.org/news/index.xml" />
+    <outline type="rss" text="" title="Chris Penner" xmlUrl="https://chrispenner.ca/atom.xml" />
   </body>
 </opml>
-
