@@ -1,5 +1,10 @@
 # Revision history for blogroll
 
+## 1.0.7 -- 2025-08-13
+
+* Generating OPML file
+* Using OPML file for the feeds
+
 ## 1.0.6 -- 2025-08-08
 
 * Fetching icons and feeds concurrently, so it's now N-times faster

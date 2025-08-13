@@ -19,15 +19,9 @@ The RSS reader is automatically deployed to: **https://unorsk.github.io/blogroll
 
 ### 1. Feed Configuration
 
-Edit `blogroll.txt` to add or remove RSS/Atom feed URLs (one per line):
+Edit `blogroll.opml.xmp` to add or remove RSS/Atom feeds.
 
-```
-https://andrewkelley.me/rss.xml
-https://mitchellh.com/feed.xml
-```
-
-
-Generating the OMPL file
+Or generating it it with blogroll
 
 ```
 cat blogroll.txt | cabal run blogroll -- --generate-opml > blogroll.opml
@@ -145,7 +139,7 @@ cabal run
 ```
 ├── app/Main.hs              # Main Haskell application
 ├── blogroll.cabal           # Cabal project configuration (source of truth for version)
-├── blogroll.txt             # RSS feed URLs (one per line)
+├── blogroll.opml.xml        # RSS feeds OPML file
 ├── CHANGELOG.md             # Release notes and version history
 ├── IBMPlexSans-VariableFont_wdth,wght.ttf  # Font file
 ├── scripts/

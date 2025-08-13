@@ -59,7 +59,6 @@ jobs:
           cabal install --install-method=copy --installdir=./
           mkdir -p blogroll
           cp blogroll blogroll/
-          cp blogroll.txt blogroll/
           cp IBMPlexSans-Regular.woff2 blogroll/ || echo "Font file not found, skipping"
           tar -czf blogroll.tar.gz blogroll/
 
@@ -72,7 +71,7 @@ jobs:
       - name: Generate RSS feed HTML
         run: |
           cd blogroll
-          ./blogroll
+          ./blogroll https://raw.githubusercontent.com/unorsk/blogroll/refs/heads/main/blogroll.opml.xml
           ls -la
 
           # Ensure we have the required files for GitHub Pages

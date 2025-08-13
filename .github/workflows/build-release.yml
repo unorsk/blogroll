@@ -45,7 +45,6 @@ jobs:
         run: |
           mkdir -p release/blogroll
           cp bin/blogroll release/blogroll/
-          cp blogroll.txt release/blogroll/
           cp IBMPlexSans-Regular.woff2 release/blogroll/ || echo "Font file not found, skipping"
           cd release
           tar -czf blogroll.tar.gz blogroll/
