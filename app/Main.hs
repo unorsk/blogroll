@@ -53,7 +53,28 @@ data FeedEntry = FeedEntry
   deriving (Show, Eq)
 
 readBlogrollOpml :: FilePath -> IO OpmlFeed
-readBlogrollOpml path = undefined
+readBlogrollOpml path = do
+  xmlContent <- L8.readFile path
+  case parseLBS def xmlContent of
+    Left err -> error $ "Failed to parse OPML: " ++ show err
+    Right doc ->
+      let cursor = fromDocument doc
+          titleText = T.concat $ cursor $// element "title" &// content
+          ownerNameText = T.concat $ cursor $// element "ownerName" &// content
+          ownerEmailText = T.concat $ cursor $// element "ownerEmail" &// content
+          entries = parseOpmlEntries cursor
+      in return $ OpmlFeed titleText ownerNameText ownerEmailText entries
+
+parseOpmlEntries :: Cursor -> [OmplFeedEntry]
+parseOpmlEntries cursor = do
+  outline <- cursor $// element "outline"
+  let typeAttr = T.concat $ outline >=> attribute "type"
+      textAttr = T.concat $ outline >=> attribute "text"
+      titleAttr = T.concat $ outline >=> attribute "title"
+      urlAttr = T.concat $ outline >=> attribute "xmlUrl"
+  if typeAttr == "rss" && not (T.null urlAttr)
+    then [OmplFeedEntry RSS textAttr titleAttr urlAttr]
+    else []
 
 readBlogroll :: FilePath -> IO [Text]
 readBlogroll path = do
