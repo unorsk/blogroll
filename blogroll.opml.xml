@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<opml version="1.0">
+<opml version="2.0">
   <head>
     <title>Good Stuff!</title>
     <dateModified>Wed, 13 Aug 2025 13:05:31 GMT</dateModified>
@@ -7,7 +7,7 @@
     <ownerEmail>no-answer@unorsk.com</ownerEmail>
   </head>
   <body>
-    <outline type="rss" text="Personal Blog" title="Stephen Diehl" xmlUrl="https://www.stephendiehl.com/feed.xml" />
+    <!-- <outline type="rss" text="Personal Blog" title="Stephen Diehl" xmlUrl="https://www.stephendiehl.com/feed.xml" />
     <outline type="rss" text="My personal website - thoughts, project demos, research." title="Andrew Kelley" xmlUrl="https://andrewkelley.me/rss.xml" />
     <outline type="rss" text="Mitchell Hashimoto's personal website." title="Mitchell Hashimoto" xmlUrl="https://mitchellh.com/feed.xml" />
     <outline type="rss" text="Thoughts on Haskell, Business, Unix, and more." title="jezenthomas.com" xmlUrl="https://jezenthomas.com/feed.xml" />
@@ -20,7 +20,7 @@
     <outline type="rss" text="Some random thoughts about crypto. Notes from a course I teach. Pictures of my dachshunds." title="A Few Thoughts on Cryptographic Engineering" xmlUrl="https://blog.cryptographyengineering.com/feed/" />
     <outline type="rss" text="" title="Blog - Jason Wei" xmlUrl="https://www.jasonwei.net/blog?format=rss" />
     <outline type="rss" text="Devlog" title="Zig Devlog" xmlUrl="https://ziglang.org/devlog/index.xml" />
-    <outline type="rss" text="Recent news" title="Ziglang.org News" xmlUrl="https://ziglang.org/news/index.xml" />
-    <outline type="rss" text="" title="Chris Penner" xmlUrl="https://chrispenner.ca/atom.xml" />
+    <outline type="rss" text="Recent news" title="Ziglang.org News" xmlUrl="https://ziglang.org/news/index.xml" /> -->
+    <outline type="rss" text="" title="Chris Penner" xmlUrl="https://chrispenner.ca/a-tom.xml" />
   </body>
 </opml>

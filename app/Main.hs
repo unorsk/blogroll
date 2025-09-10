@@ -5,15 +5,19 @@
 
 module Main where
 
+import Blogroll.Error
 import Blogroll.Html (renderAll)
 import Blogroll.Opml (fetchBlogrollOpml, fetchFeedInfo, generateOpmlXml)
 import Blogroll.Type (OpmlFeed (..))
 import Control.Concurrent.Async (mapConcurrently)
-import Data.Maybe (catMaybes)
+import Control.Monad (forM_)
+import Data.Either (partitionEithers)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import System.Environment (getArgs)
+import System.Exit (exitFailure)
+import System.IO (stderr)
 
 main :: IO ()
 main = do
@@ -22,19 +26,29 @@ main = do
     ["--generate-opml"] -> do
       urls <- readUrlsFromStdin
       putStrLn $ "Fetching info for " ++ show (length urls) ++ " feeds"
-      feedInfos <- mapConcurrently fetchFeedInfo urls
-      let results = zip urls feedInfos
-          validFeeds = catMaybes feedInfos
-          failedFeeds = [url | (url, Nothing) <- results]
+      results <- mapConcurrently (runBlogrollM . fetchFeedInfo) urls
+      let (errors, validFeeds) = partitionEithers results
+          urlErrorPairs = zip urls results
+          failedUrls = [url | (url, Left _) <- urlErrorPairs]
       putStrLn $ "Successfully fetched " ++ show (length validFeeds) ++ " feeds"
-      mapM_ (\url -> putStrLn $ "Failed to fetch: " ++ T.unpack url) failedFeeds
+      forM_ (zip failedUrls errors) $ \(url, err) -> do
+        TIO.hPutStrLn stderr $ "Failed to fetch " <> url <> ": " <> T.pack (show err)
       opmlXml <- generateOpmlXml validFeeds
       TIO.putStrLn opmlXml
     [opmlPath] -> do
-      opmlFeed <- fetchBlogrollOpml (T.pack opmlPath)
-      putStrLn $ "Found " ++ show (length opmlFeed.entries) ++ " feeds"
-
-      renderAll opmlFeed
+      result <- runBlogrollM $ fetchBlogrollOpml (T.pack opmlPath)
+      case result of
+        Left err -> do
+          TIO.hPutStrLn stderr $ "Error: " <> T.pack (show err)
+          exitFailure
+        Right opmlFeed -> do
+          putStrLn $ "Found " ++ show (length opmlFeed.entries) ++ " feeds"
+          renderResult <- runBlogrollM $ renderAll opmlFeed
+          case renderResult of
+            Left err ->
+              TIO.hPutStrLn stderr $ "Error: " <> T.pack (show err)
+            Right _ -> return ()
+          return ()
     _ -> do
       putStrLn "Usage:"
       putStrLn "  blogroll <opml-file-or-url>    Generate HTML from OPML file or URL"

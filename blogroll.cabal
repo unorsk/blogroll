@@ -24,6 +24,7 @@ library
     Blogroll.Opml
     Blogroll.Type
     Blogroll.Fetch
+    Blogroll.Error
 
   build-depends:      base ^>=4.21.0.0,
                       http-conduit,
@@ -33,7 +34,9 @@ library
                       text,
                       containers,
                       base64-bytestring,
-                      async
+                      async,
+                      mtl,
+                      transformers
 
   hs-source-dirs:   src/
   default-language: GHC2024
@@ -52,6 +55,8 @@ executable blogroll
                       containers,
                       base64-bytestring,
                       async,
+                      mtl,
+                      transformers,
                       blogroll
 
     hs-source-dirs:   app
