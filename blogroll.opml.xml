@@ -22,6 +22,6 @@
     <outline type="rss" text="Devlog" title="Zig Devlog" xmlUrl="https://ziglang.org/devlog/index.xml" />
     <outline type="rss" text="Recent news" title="Ziglang.org News" xmlUrl="https://ziglang.org/news/index.xml" />
     <outline type="rss" text="" title="Chris Penner" xmlUrl="https://chrispenner.ca/atom.xml" />
-    <outline type="rss" text="Simon Willison's Weblog" title="Simon Willison" xmlUrl="https://simonwillison.net/atom/everything/" />
+    <outline type="rss" text="Exploring Better Ways - Bellroy" title="Exploring Better Ways - Bellroy" xmlUrl="https://exploring-better-ways.bellroy.com/rss.xml" />
   </body>
 </opml>
