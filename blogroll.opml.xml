@@ -9,6 +9,7 @@
   <body>
     <outline type="rss" text="Personal Blog" title="Stephen Diehl" xmlUrl="https://www.stephendiehl.com/feed.xml" />
     <outline type="rss" text="My personal website - thoughts, project demos, research." title="Andrew Kelley" xmlUrl="https://andrewkelley.me/rss.xml" />
+    <outline type="rss" text="Public posts from @andrewrk@mastodon.social" title="Andrew Kelley" xmlUrl="https://mastodon.social/@andrewrk.rss" />
     <outline type="rss" text="Mitchell Hashimoto's personal website." title="Mitchell Hashimoto" xmlUrl="https://mitchellh.com/feed.xml" />
     <outline type="rss" text="Thoughts on Haskell, Business, Unix, and more." title="jezenthomas.com" xmlUrl="https://jezenthomas.com/feed.xml" />
     <outline type="rss" text="Notes on software development" title="Notes on software development" xmlUrl="https://notes.eatonphil.com/rss.xml" />
