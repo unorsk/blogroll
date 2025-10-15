@@ -1,5 +1,9 @@
 # Revision history for blogroll
 
+## 1.0.8 -- 2025-10-14
+
+* Removing support for opml
+
 ## 1.0.7 -- 2025-08-13
 
 * Generating OPML file
