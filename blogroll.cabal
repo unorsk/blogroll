@@ -1,7 +1,7 @@
 cabal-version:      3.14
 name:               blogroll
 
-version:            1.0.7
+version:            1.0.8
 license:            MIT
 license-file:       LICENSE
 author:             unorsk
@@ -12,6 +12,7 @@ build-type:         Simple
 
 extra-doc-files:    CHANGELOG.md
                     README.md
+                    AGENTS.md
 
 common warnings
     ghc-options: -Wall
