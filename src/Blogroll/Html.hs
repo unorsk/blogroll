@@ -6,7 +6,7 @@ module Blogroll.Html where
 
 import Blogroll.Feed (mergeFeedEntries, parseFeed)
 import Blogroll.Fetch (extractDomain, fetchAllFavicons, fetchFeed)
-import Blogroll.Type (FeedEntry (..), OpmlFeed (..), url)
+import Blogroll.Type (FeedEntry (..), Blogroll (..))
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Exception (SomeException, try)
 import Data.ByteString qualified as BS
@@ -55,9 +55,9 @@ loadFontAsBase64 fontPath = do
     Left (_ :: SomeException) -> return Nothing
     Right base64 -> return $ Just base64
 
-renderAll :: OpmlFeed -> IO ()
-renderAll opmlFeed = do
-  let urls = map (\entry -> entry.url) opmlFeed.entries
+renderAll :: Blogroll -> IO ()
+renderAll blogroll = do
+  let urls = blogroll.urls
   fontBase64 <- loadFontAsBase64 "IBMPlexSans-Regular.woff2"
   faviconMap <- fetchAllFavicons urls
   let faviconCss = generateFaviconCss faviconMap
@@ -75,8 +75,8 @@ renderAll opmlFeed = do
   putStrLn $ "Total entries: " ++ show (length allEntries)
 
   let recent25 = take 25 allEntries
-  let recentHtml = renderHtml recent25 opmlFeed.title faviconCss fontBase64
-  let allHtml = renderHtml allEntries (opmlFeed.title <> " - All Posts") faviconCss fontBase64
+  let recentHtml = renderHtml recent25 blogroll.title faviconCss fontBase64
+  let allHtml = renderHtml allEntries (blogroll.title <> " - All Posts") faviconCss fontBase64
 
   TIO.writeFile "index.html" recentHtml
   TIO.writeFile "all.html" allHtml

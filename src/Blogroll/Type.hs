@@ -1,27 +1,13 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Blogroll.Type (FeedEntry (..), OpmlFeed (..), FeedType (..), OpmlFeedEntry (..)) where
+module Blogroll.Type (FeedEntry (..), Blogroll (..)) where
 
 import Data.Text (Text)
 import Data.Time (UTCTime)
 
-data FeedType = RSS | ATOM
-  deriving (Show, Eq)
-
-data OpmlFeed = OpmlFeed
+data Blogroll = Blogroll
   { title :: Text,
-    -- <dateModified>Mon, 11 Aug 2025 08:01:37 GMT</dateModified>
-    ownerName :: Text,
-    ownerEmail :: Text,
-    entries :: [OpmlFeedEntry]
-  }
-  deriving (Show, Eq)
-
-data OpmlFeedEntry = OpmlFeedEntry
-  { feedType :: FeedType,
-    text :: Text,
-    title :: Text,
-    url :: Text
+    urls :: [Text]
   }
   deriving (Show, Eq)
 
