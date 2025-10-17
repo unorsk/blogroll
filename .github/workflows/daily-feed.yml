@@ -59,7 +59,6 @@ jobs:
           cabal install --install-method=copy --installdir=./
           mkdir -p blogroll
           cp blogroll blogroll/
-          cp IBMPlexSans-Regular.woff2 blogroll/ || echo "Font file not found, skipping"
           tar -czf blogroll.tar.gz blogroll/
 
       - name: Extract and prepare
@@ -71,7 +70,7 @@ jobs:
       - name: Generate RSS feed HTML
         run: |
           cd blogroll
-          curl -L https://raw.githubusercontent.com/unorsk/blogroll/refs/heads/main/blogroll.txt -o blogroll.txt
+          curl -L https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/main/blogroll.txt -o blogroll.txt
           ./blogroll blogroll.txt
           ls -la
 
@@ -85,11 +84,6 @@ jobs:
           if [ ! -f "all.html" ]; then
             echo "Error: all.html not generated"
             exit 1
-          fi
-
-          # Copy font file to the root if it exists
-          if [ -f "IBMPlexSans-Regular.woff2" ]; then
-            echo "Font file found, keeping it for web serving"
           fi
 
       - name: Setup Pages
