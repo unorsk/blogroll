@@ -57,19 +57,19 @@ jobs:
           cabal update
           cabal build --enable-optimization=2
           cabal install --install-method=copy --installdir=./
-          mkdir -p blogroll
-          cp blogroll blogroll/
-          tar -czf blogroll.tar.gz blogroll/
+          mkdir -p blogroll-bin
+          cp blogroll blogroll-bin/
+          tar -czf blogroll.tar.gz blogroll-bin/
 
       - name: Extract and prepare
         run: |
           tar -xzf blogroll.tar.gz
-          cd blogroll
+          cd blogroll-bin
           ls -la
 
       - name: Generate RSS feed HTML
         run: |
-          cd blogroll
+          cd blogroll-bin
           curl -L https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/main/blogroll.txt -o blogroll.txt
           ./blogroll blogroll.txt
           ls -la
@@ -92,7 +92,7 @@ jobs:
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./blogroll"
+          path: "./blogroll-bin"
 
       - name: Deploy to GitHub Pages
         id: deployment
