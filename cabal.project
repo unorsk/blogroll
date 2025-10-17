@@ -1,0 +1,7 @@
+packages: .
+
+package *
+  ghc-options: -split-sections
+
+package blogroll
+  ghc-options: -O2
