@@ -33,6 +33,7 @@ library
                        text,
                        containers,
                        base64-bytestring,
+                       network-uri,
                        async
 
   hs-source-dirs:   src/
@@ -51,6 +52,7 @@ executable blogroll
                        text,
                        containers,
                        base64-bytestring,
+                       network-uri,
                        async,
                        blogroll
 

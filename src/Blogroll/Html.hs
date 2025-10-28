@@ -6,7 +6,7 @@ module Blogroll.Html where
 
 import Blogroll.Feed (mergeFeedEntries, parseFeed)
 import Blogroll.Fetch (extractDomain, fetchAllFavicons, fetchFeed)
-import Blogroll.Type (FeedEntry (..), Blogroll (..))
+import Blogroll.Type (Blogroll (..), FeedEntry (..))
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Exception (SomeException, try)
 import Data.ByteString qualified as BS
@@ -174,7 +174,7 @@ renderHtml entries title faviconCss maybeFontBase64 =
     renderEntry entry =
       T.concat
         [ "<li><div><a href=\"",
-          entryLink entry,
+          T.pack $ show $ entryLink entry,
           "\" class=\"",
           generateDomainCssClass (extractDomain entry.entrySiteUrl),
           "\">",
