@@ -55,6 +55,7 @@ loadFontAsBase64 fontPath = do
     Left (_ :: SomeException) -> return Nothing
     Right base64 -> return $ Just base64
 
+-- TODO split this one into fetching and rendering
 renderAll :: Blogroll -> IO ()
 renderAll blogroll = do
   let urls = blogroll.urls

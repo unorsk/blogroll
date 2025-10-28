@@ -45,15 +45,10 @@ executable blogroll
     main-is:          Main.hs
 
     build-depends:    base ^>=4.21.0.0,
-                       http-conduit,
-                       xml-conduit,
-                       time,
                        bytestring,
                        text,
                        containers,
                        base64-bytestring,
-                       network-uri,
-                       async,
                        blogroll
 
     hs-source-dirs:   app

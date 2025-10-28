@@ -9,10 +9,16 @@ import Data.List (sortBy)
 import Data.Maybe (mapMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Text qualified as T
+import Data.Text.IO qualified as TIO
 import Data.Time (UTCTime, defaultTimeLocale, parseTimeM)
 import Network.URI (URI, parseURI)
 import Text.XML (def, parseLBS)
 import Text.XML.Cursor (Cursor, attribute, content, element, fromDocument, laxElement, ($//), (&//), (>=>))
+
+readUrlsFromFile :: T.Text -> IO [URI]
+readUrlsFromFile path = do
+  input <- TIO.readFile (T.unpack path)
+  return $ mapMaybe (parseURI . T.unpack) $ filter (not . T.null) $ map T.strip $ T.lines input
 
 parseFeed :: URI -> L8.ByteString -> [FeedEntry]
 parseFeed siteUrl xmlContent =
