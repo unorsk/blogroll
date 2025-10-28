@@ -16,7 +16,9 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Text.IO qualified as TIO
+import Data.Text.Lazy qualified as TL
 import Data.Time (defaultTimeLocale, formatTime)
+import Lucid
 
 generateDomainCssClass :: Text -> Text
 generateDomainCssClass domain =
@@ -84,39 +86,41 @@ renderAll blogroll = do
   putStrLn "Generated index.html (25 recent) and all.html"
 
 renderHtml :: [FeedEntry] -> Text -> Text -> Maybe Text -> Text
-renderHtml entries title faviconCss maybeFontBase64 =
-  let entriesHtml = T.concat $ map renderEntry entries
-      fontFace = case maybeFontBase64 of
-        Just fontBase64 ->
-          """@font-face {
-          font-family: 'IBM Plex Sans';
-          src: url(data:font/woff2;base64,"""
-            <> fontBase64
-            <> """) format('woff2');
-                 font-weight: 400;
-               }"""
-        Nothing ->
-          """@font-face {
-            font-family: 'IBM Plex Sans';
-            src: url('IBMPlexSans-Regular.woff2') format('woff2');
-            font-weight: 400;
-          }"""
-   in """
-      <!DOCTYPE html>
-      <html>
-      <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>RSS Reader</title>
-      <style>
-      """
-        <> fontFace
-        <> """
+renderHtml entries pageTitle faviconCss maybeFontBase64 =
+  TL.toStrict $ renderText $ doctype_ <> html_ (do
+    head_ (do
+      meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
+      title_ "RSS Reader"
+      style_ [] (toHtmlRaw $ generateStyles faviconCss maybeFontBase64))
+    body_ (do
+      h1_ (toHtml pageTitle)
+      ul_ (do
+        mapM_ renderEntry entries
+        li_ (a_ [href_ "all.html"] "See all"))))
+  where
+    generateStyles :: Text -> Maybe Text -> Text
+    generateStyles css maybeFontB64 =
+      let fontFace = case maybeFontB64 of
+            Just fontBase64 ->
+              """@font-face {
+                font-family: 'IBM Plex Sans';
+                src: url(data:font/woff2;base64,"""
+                <> fontBase64
+                <> """) format('woff2');
+                font-weight: 400;
+              }"""
+            Nothing ->
+              """@font-face {
+                font-family: 'IBM Plex Sans';
+                src: url('IBMPlexSans-Regular.woff2') format('woff2');
+                font-weight: 400;
+              }"""
+       in fontFace
+            <> """
            body {
              font-family: 'IBM Plex Sans', -apple-system, sans-serif;
              max-width: 800px;
              margin: 0 auto;
-             /* padding-left: 0.5em; */
-             /* padding-right: 0.5em; */
              color: #333;
              display: flex;
              flex-flow: column;
@@ -154,36 +158,16 @@ renderHtml entries title faviconCss maybeFontBase64 =
              padding-left: 0.5em;
            }
            """
-        <> faviconCss
-        <> """
-           </style>
-           </head>
-            <body>
-             <h1>"""
-        <> title
-        <> """</h1>
-           <ul>
-           """
-        <> entriesHtml
-        <> """
-              <li><a href=\"all.html\">See all</a></li>
-              </ul>
-            </body>
-           </html>
-           """
-  where
+            <> css
+
+    renderEntry :: FeedEntry -> Html ()
     renderEntry entry =
-      T.concat
-        [ "<li><div><a href=\"",
-          T.pack $ show $ entryLink entry,
-          "\" class=\"",
-          generateDomainCssClass (extractDomain entry.entrySiteUrl),
-          "\">",
-          entryTitle entry,
-          "</a><span class=\"source\">(",
-          extractDomain entry.entrySiteUrl,
-          ")</span></div>",
-          "<div class=\"date\">",
-          T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate,
-          "</div></li>"
-        ]
+      li_ (do
+        div_ (do
+          a_
+            [ href_ (T.pack $ show $ entryLink entry),
+              class_ (generateDomainCssClass (extractDomain entry.entrySiteUrl))
+            ]
+            (toHtml $ entryTitle entry)
+          span_ [class_ "source"] (toHtml $ "(" <> extractDomain entry.entrySiteUrl <> ")"))
+        div_ [class_ "date"] (toHtml $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate))

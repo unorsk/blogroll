@@ -14,7 +14,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Time (diffUTCTime, getCurrentTime)
 import Network.HTTP.Simple (getResponseBody, httpLBS, parseRequest, setRequestHeaders)
-import Network.URI (URI (..))
+import Network.URI (URI (..), uriRegName)
 
 fetchAllFavicons :: [URI] -> IO (Map.Map Text Text)
 fetchAllFavicons urls = do
@@ -58,7 +58,11 @@ fetchFeed url = do
     Right body -> return $ Right body
 
 extractDomain :: URI -> Text
-extractDomain url = T.drop (T.length (T.pack $ uriScheme url) + 2) (T.pack $ show url)
+extractDomain url = do
+  let domain1 = uriAuthority url
+   in case domain1 of
+        Just domain -> T.pack $ uriRegName domain
+        Nothing -> T.pack "" -- TODO yet again, I'll fix this later
 
 fetchFavicon :: Text -> IO (Maybe Text)
 fetchFavicon domain = do

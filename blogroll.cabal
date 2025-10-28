@@ -34,7 +34,8 @@ library
                        containers,
                        base64-bytestring,
                        network-uri,
-                       async
+                       async,
+                       lucid2
 
   hs-source-dirs:   src/
   default-language: GHC2024
@@ -49,6 +50,7 @@ executable blogroll
                        text,
                        containers,
                        base64-bytestring,
+                       lucid2,
                        blogroll
 
     hs-source-dirs:   app
