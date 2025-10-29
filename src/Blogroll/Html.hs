@@ -54,14 +54,14 @@ loadFontAsBase64 fontPath = do
     let base64Text = TE.decodeUtf8 $ Base64.encode fontBytes
     return base64Text
   case result of
-    Left (_ :: SomeException) -> return Nothing
+    Left (_ :: SomeException) -> return Nothing -- TODO handle this situation properly
     Right base64 -> return $ Just base64
 
 -- TODO split this one into fetching and rendering
 renderAll :: Blogroll -> IO ()
 renderAll blogroll = do
   let urls = blogroll.urls
-  fontBase64 <- loadFontAsBase64 "IBMPlexSans-Regular.woff2"
+  fontBase64 <- loadFontAsBase64 blogroll.pathToFontFile
   faviconMap <- fetchAllFavicons urls
   let faviconCss = generateFaviconCss faviconMap
   feeds <- mapConcurrently fetchFeed urls
@@ -87,87 +87,98 @@ renderAll blogroll = do
 
 renderHtml :: [FeedEntry] -> Text -> Text -> Maybe Text -> Text
 renderHtml entries pageTitle faviconCss maybeFontBase64 =
-  TL.toStrict $ renderText $ doctype_ <> html_ (do
-    head_ (do
-      meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
-      title_ "RSS Reader"
-      style_ [] (toHtmlRaw $ generateStyles faviconCss maybeFontBase64))
-    body_ (do
-      h1_ (toHtml pageTitle)
-      ul_ (do
-        mapM_ renderEntry entries
-        li_ (a_ [href_ "all.html"] "See all"))))
+  let css = generateStyles maybeFontBase64 <> faviconCss
+   in TL.toStrict $
+        renderText $
+          doctype_
+            <> html_
+              ( do
+                  head_
+                    ( do
+                        meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
+                        title_ "RSS Reader"
+                        style_ [] (toHtmlRaw css)
+                    )
+                  body_
+                    ( do
+                        h1_ (toHtml pageTitle)
+                        ul_
+                          ( do
+                              mapM_ renderEntry entries
+                              li_ (a_ [href_ "all.html"] "See all")
+                          )
+                    )
+              )
   where
-    generateStyles :: Text -> Maybe Text -> Text
-    generateStyles css maybeFontB64 =
+    generateStyles :: Maybe Text -> Text
+    generateStyles maybeFontB64 =
       let fontFace = case maybeFontB64 of
             Just fontBase64 ->
               """@font-face {
-                font-family: 'IBM Plex Sans';
-                src: url(data:font/woff2;base64,"""
+              font-family: 'A Very Nice Font';
+              src: url(data:font/woff2;base64,"""
                 <> fontBase64
                 <> """) format('woff2');
-                font-weight: 400;
-              }"""
-            Nothing ->
-              """@font-face {
-                font-family: 'IBM Plex Sans';
-                src: url('IBMPlexSans-Regular.woff2') format('woff2');
-                font-weight: 400;
-              }"""
+                     font-weight: 400;
+                   }"""
+            Nothing -> "" -- we don't have font, so no style here
        in fontFace
             <> """
-           body {
-             font-family: 'IBM Plex Sans', -apple-system, sans-serif;
-             max-width: 800px;
-             margin: 0 auto;
-             color: #333;
-             display: flex;
-             flex-flow: column;
-             align-content: center;
-           }
-           h1 {
-             color: #2c3e50;
-             border-bottom: 2px solid #3498db;
-             padding-bottom: 10px;
-           }
-           ul {
-             list-style: none;
-             padding: 0;
-             margin-top: 0
-           }
-           li {
-             padding-left: 8px;
-             padding-bottom: 8px;
-           }
-           a {
-             color: #2980b9;
-             text-decoration: none;
-             font-weight: 500;
-           }
-           a:hover {
-             text-decoration: underline;
-           }
-           .date {
-             color: #7f8c8d;
-             font-size: 0.6em;
-           }
-           .source {
-             color: #95a5a6;
-             font-size: 0.8em;
-             padding-left: 0.5em;
-           }
-           """
-            <> css
+               body {
+                 font-family: 'A Very Nice Font', Helvetica, Arial, system-ui, -apple-system, sans-serif;
+                 font-weigth: 400;
+                 max-width: 800px;
+                 margin: 0 auto;
+                 color: #333;
+                 display: flex;
+                 flex-flow: column;
+                 align-content: center;
+               }
+               h1 {
+                 color: #2c3e50;
+                 border-bottom: 2px solid #3498db;
+                 padding-bottom: 10px;
+               }
+               ul {
+                 list-style: none;
+                 padding: 0;
+                 margin-top: 0
+               }
+               li {
+                 padding-left: 8px;
+                 padding-bottom: 8px;
+               }
+               a {
+                 color: #2980b9;
+                 text-decoration: none;
+                 font-weight: 500;
+               }
+               a:hover {
+                 text-decoration: underline;
+               }
+               .date {
+                 color: #7f8c8d;
+                 font-size: 0.6em;
+               }
+               .source {
+                 color: #95a5a6;
+                 font-size: 0.8em;
+                 padding-left: 0.5em;
+               }
+               """
 
     renderEntry :: FeedEntry -> Html ()
     renderEntry entry =
-      li_ (do
-        div_ (do
-          a_
-            [ href_ (T.pack $ show $ entryLink entry),
-              class_ (generateDomainCssClass (extractDomain entry.entrySiteUrl))
-            ]
-            (toHtml $ entryTitle entry)
-          span_ [class_ "source"] (toHtml $ "(" <> extractDomain entry.entrySiteUrl <> ")"))
-        div_ [class_ "date"] (toHtml $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate))
+      li_
+        ( do
+            div_
+              ( do
+                  a_
+                    [ href_ (T.pack $ show $ entryLink entry),
+                      class_ (generateDomainCssClass (extractDomain entry.entrySiteUrl))
+                    ]
+                    (toHtml $ entryTitle entry)
+                  span_ [class_ "source"] (toHtml $ "(" <> extractDomain entry.entrySiteUrl <> ")")
+              )
+            div_ [class_ "date"] (toHtml $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate)
+        )

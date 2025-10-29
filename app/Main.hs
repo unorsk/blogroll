@@ -14,12 +14,12 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    [blogrollPath, blogrollName] -> do
+    [blogrollPath, blogrollName, pathToFontFile] -> do
       urls <- readUrlsFromFile (T.pack blogrollPath)
-      let blogroll = Blogroll {title = T.pack blogrollName, urls = urls}
+      let blogroll = Blogroll {title = T.pack blogrollName, pathToFontFile = pathToFontFile, urls = urls}
       putStrLn $ "Found " ++ show (length urls) ++ " feeds"
       -- TODO split this one into fetching and rendering
       renderAll blogroll
     _ -> do
       putStrLn "Usage:"
-      putStrLn "  blogroll <blogroll-file> <blogroll-title>"
+      putStrLn "  blogroll <blogroll-file> <blogroll-title> <font-path>"

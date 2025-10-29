@@ -72,7 +72,7 @@ jobs:
         run: |
           cd blogroll
           curl -L https://raw.githubusercontent.com/unorsk/blogroll/refs/heads/main/blogroll.txt -o blogroll.txt
-          ./blogroll blogroll.txt
+          ./blogroll blogroll.txt "Good Stuff!" "IBMPlexSans-Regular.woff2"
           ls -la
 
           # Ensure we have the required files for GitHub Pages
