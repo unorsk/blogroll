@@ -14,3 +14,4 @@ https://ziglang.org/devlog/index.xml
 https://ziglang.org/news/index.xml
 https://chrispenner.ca/atom.xml
 https://exploring-better-ways.bellroy.com/rss.xml
+https://secret.club/feed.xml
