@@ -1,5 +1,11 @@
 # Revision history for blogroll
 
+## 1.0.9 -- 2025-10-31
+
+* Generating HTML with Lucid2
+* Making links a bit more typesafe by usin URI
+* Cutting off http/https with URI
+
 ## 1.0.8 -- 2025-10-14
 
 * Removing support for opml

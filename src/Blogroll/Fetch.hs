@@ -14,8 +14,9 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Time (diffUTCTime, getCurrentTime)
 import Network.HTTP.Simple (getResponseBody, httpLBS, parseRequest, setRequestHeaders)
+import Network.URI (URI (..), uriRegName)
 
-fetchAllFavicons :: [Text] -> IO (Map.Map Text Text)
+fetchAllFavicons :: [URI] -> IO (Map.Map Text Text)
 fetchAllFavicons urls = do
   let domains = nub $ map extractDomain urls
   putStrLn $ "Fetching favicons for " ++ show (length domains) ++ " domains"
@@ -36,11 +37,11 @@ fetchAllFavicons urls = do
         )
         faviconResults
 
-fetchFeed :: Text -> IO (Either String L8.ByteString)
+fetchFeed :: URI -> IO (Either String L8.ByteString)
 fetchFeed url = do
   start <- getCurrentTime
   result <- try $ do
-    request <- parseRequest (T.unpack url)
+    request <- parseRequest $ show url
     let requestWithHeaders =
           setRequestHeaders
             [ ("User-Agent", "Blogroll RSS Reader/1.0"),
@@ -51,15 +52,17 @@ fetchFeed url = do
     return $ getResponseBody response
   end <- getCurrentTime
   let duration = diffUTCTime end start
-  putStrLn $ "Fetched " ++ T.unpack url ++ " in " ++ show duration
+  putStrLn $ "Fetched " ++ show url ++ " in " ++ show duration
   case result of
     Left e -> return $ Left $ show (e :: SomeException)
     Right body -> return $ Right body
 
-extractDomain :: Text -> Text
-extractDomain url =
-  let withoutProtocol = T.drop (T.length "https://") url
-   in T.takeWhile (/= '/') withoutProtocol
+extractDomain :: URI -> Text
+extractDomain url = do
+  let domain1 = uriAuthority url
+   in case domain1 of
+        Just domain -> T.pack $ uriRegName domain
+        Nothing -> T.pack "" -- TODO yet again, I'll fix this later
 
 fetchFavicon :: Text -> IO (Maybe Text)
 fetchFavicon domain = do

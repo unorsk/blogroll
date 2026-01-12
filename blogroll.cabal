@@ -1,7 +1,7 @@
 cabal-version:      3.14
 name:               blogroll
 
-version:            1.0.8
+version:            1.0.9
 license:            MIT
 license-file:       LICENSE
 author:             unorsk
@@ -33,7 +33,9 @@ library
                        text,
                        containers,
                        base64-bytestring,
-                       async
+                       network-uri,
+                       async,
+                       lucid2
 
   hs-source-dirs:   src/
   default-language: GHC2024
@@ -44,14 +46,11 @@ executable blogroll
     main-is:          Main.hs
 
     build-depends:    base ^>=4.21.0.0,
-                       http-conduit,
-                       xml-conduit,
-                       time,
                        bytestring,
                        text,
                        containers,
                        base64-bytestring,
-                       async,
+                       lucid2,
                        blogroll
 
     hs-source-dirs:   app
