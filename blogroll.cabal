@@ -1,7 +1,7 @@
 cabal-version:      3.14
 name:               blogroll
 
-version:            1.0.9
+version:            1.0.10
 license:            MIT
 license-file:       LICENSE
 author:             unorsk
@@ -51,6 +51,9 @@ executable blogroll
                        containers,
                        base64-bytestring,
                        lucid2,
+                       async,
+                       network-uri,
+                       optparse-applicative,
                        blogroll
 
     hs-source-dirs:   app
