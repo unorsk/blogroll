@@ -8,7 +8,8 @@ import Network.URI (URI)
 
 data Blogroll = Blogroll
   { title :: Text,
-    pathToFontFile :: FilePath,
+    pathToFontFile :: Maybe FilePath,
+    recentCount :: Int,
     urls :: [URI]
   }
   deriving (Show, Eq)

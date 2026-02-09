@@ -53,6 +53,7 @@ executable blogroll
                        lucid2,
                        async,
                        network-uri,
+                       optparse-applicative,
                        blogroll
 
     hs-source-dirs:   app

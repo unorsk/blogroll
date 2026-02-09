@@ -12,30 +12,53 @@ import Data.Maybe (mapMaybe)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import Network.URI (URI, parseURI)
-import System.Environment (getArgs)
+import Options.Applicative
+
+data Options = Options
+  { optBlogrollPath :: FilePath,
+    optTitle :: Maybe T.Text,
+    optFontPath :: Maybe FilePath,
+    optRecentCount :: Int
+  }
+
+optionsParser :: Parser Options
+optionsParser =
+  Options
+    <$> argument str (metavar "BLOGROLL_FILE" <> help "Path to file with feed URLs")
+    <*> optional (option (T.pack <$> str) (long "title" <> short 't' <> metavar "TITLE" <> help "Blogroll title"))
+    <*> optional (strOption (long "font" <> short 'f' <> metavar "FONT_PATH" <> help "Path to .woff2 font file"))
+    <*> option auto (long "recent" <> short 'n' <> metavar "N" <> value 25 <> showDefault <> help "Number of recent entries on the front page")
 
 main :: IO ()
 main = do
-  args <- getArgs
-  case args of
-    [blogrollPath, blogrollName, pathToFontFile] -> do
-      urls <- readUrlsFromFile (T.pack blogrollPath)
-      let blogroll = Blogroll {title = T.pack blogrollName, pathToFontFile = pathToFontFile, urls = urls}
-      putStrLn $ "Found " ++ show (length urls) ++ " feeds"
-      generateBlogroll blogroll
-      where
-        readUrlsFromFile :: T.Text -> IO [URI]
-        readUrlsFromFile path = do
-          input <- TIO.readFile (T.unpack path)
-          return $ mapMaybe (parseURI . T.unpack) $ filter (not . T.null) $ map T.strip $ T.lines input
-    _ -> do
-      putStrLn "Usage:"
-      putStrLn "  blogroll <blogroll-file> <blogroll-title> <font-path>"
+  opts <- execParser parserInfo
+  urls <- readUrlsFromFile opts.optBlogrollPath
+  let blogroll =
+        Blogroll
+          { title = maybe "Blogroll" id opts.optTitle,
+            pathToFontFile = opts.optFontPath,
+            recentCount = opts.optRecentCount,
+            urls = urls
+          }
+  putStrLn $ "Found " ++ show (length urls) ++ " feeds"
+  generateBlogroll blogroll
+  where
+    parserInfo =
+      info
+        (optionsParser <**> helper)
+        (fullDesc <> progDesc "Generate an HTML blogroll from RSS/Atom feed URLs")
+
+readUrlsFromFile :: FilePath -> IO [URI]
+readUrlsFromFile path = do
+  input <- TIO.readFile path
+  return $ mapMaybe (parseURI . T.unpack) $ filter (not . T.null) $ map T.strip $ T.lines input
 
 generateBlogroll :: Blogroll -> IO ()
 generateBlogroll blogroll = do
   let urls = blogroll.urls
-  fontBase64 <- loadFontAsBase64 blogroll.pathToFontFile
+  fontBase64 <- case blogroll.pathToFontFile of
+    Just path -> loadFontAsBase64 path
+    Nothing -> return Nothing
 
   results <- mapConcurrently fetchUrlData urls
 
@@ -51,13 +74,13 @@ generateBlogroll blogroll = do
   let allEntries = mergeFeedEntries feedEntries
   putStrLn $ "Total entries: " ++ show (length allEntries)
 
-  let recent25 = take 25 allEntries
-  let recentHtml = renderHtml recent25 blogroll.title faviconCss fontBase64
+  let recent = take blogroll.recentCount allEntries
+  let recentHtml = renderHtml recent blogroll.title faviconCss fontBase64
   let allHtml = renderHtml allEntries (blogroll.title <> " - All Posts") faviconCss fontBase64
 
   TIO.writeFile "index.html" recentHtml
   TIO.writeFile "all.html" allHtml
-  putStrLn "Generated index.html (25 recent) and all.html"
+  putStrLn $ "Generated index.html (" ++ show blogroll.recentCount ++ " recent) and all.html"
   where
     fetchUrlData url = do
       let domain = extractDomain url
