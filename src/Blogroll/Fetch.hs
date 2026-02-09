@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Blogroll.Fetch (fetchAllFavicons, fetchFeed, extractDomain) where
+module Blogroll.Fetch (fetchAllFavicons, fetchFeed, fetchFavicon, extractDomain) where
 
 import Control.Concurrent.Async (mapConcurrently)
 import Control.Exception (SomeException, try)

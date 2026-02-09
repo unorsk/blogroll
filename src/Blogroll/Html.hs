@@ -5,13 +5,12 @@
 module Blogroll.Html where
 
 import Blogroll.Feed (mergeFeedEntries, parseFeed)
-import Blogroll.Fetch (extractDomain, fetchAllFavicons, fetchFeed)
+import Blogroll.Fetch (extractDomain, fetchFavicon, fetchFeed)
 import Blogroll.Type (Blogroll (..), FeedEntry (..))
-import Control.Concurrent.Async (mapConcurrently)
+import Control.Concurrent.Async (concurrently, mapConcurrently)
 import Control.Exception (SomeException, try)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base64 qualified as Base64
-import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -24,9 +23,9 @@ generateDomainCssClass :: Text -> Text
 generateDomainCssClass domain =
   "favicon-" <> T.map (\c -> if c `elem` ['.', '-'] then '_' else c) domain
 
-generateFaviconCss :: Map.Map Text Text -> Text
-generateFaviconCss faviconMap =
-  T.concat $ map generateSingleCss (Map.toList faviconMap)
+generateFaviconCss :: [(Text, Text)] -> Text
+generateFaviconCss favicons =
+  T.concat $ map generateSingleCss favicons
   where
     generateSingleCss (domain, base64) =
       T.concat
@@ -62,17 +61,21 @@ renderAll :: Blogroll -> IO ()
 renderAll blogroll = do
   let urls = blogroll.urls
   fontBase64 <- loadFontAsBase64 blogroll.pathToFontFile
-  faviconMap <- fetchAllFavicons urls
-  let faviconCss = generateFaviconCss faviconMap
-  feeds <- mapConcurrently fetchFeed urls
+
+  results <- mapConcurrently fetchUrlData urls
+
+  let favicons =
+        [ (extractDomain url, base64)
+          | (url, (Just base64, _)) <- zip urls results
+        ]
+  let faviconCss = generateFaviconCss favicons
+
   let feedEntries =
-        zipWith
-          ( \url result -> case result of
-              Left _err -> []
-              Right cont -> parseFeed url cont
-          )
-          urls
-          feeds
+        [ case feedResult of
+            Left _err -> []
+            Right cont -> parseFeed url cont
+          | (url, (_, feedResult)) <- zip urls results
+        ]
 
   let allEntries = mergeFeedEntries feedEntries
   putStrLn $ "Total entries: " ++ show (length allEntries)
@@ -84,6 +87,10 @@ renderAll blogroll = do
   TIO.writeFile "index.html" recentHtml
   TIO.writeFile "all.html" allHtml
   putStrLn "Generated index.html (25 recent) and all.html"
+  where
+    fetchUrlData url = do
+      let domain = extractDomain url
+      concurrently (fetchFavicon domain) (fetchFeed url)
 
 renderHtml :: [FeedEntry] -> Text -> Text -> Maybe Text -> Text
 renderHtml entries pageTitle faviconCss maybeFontBase64 =
