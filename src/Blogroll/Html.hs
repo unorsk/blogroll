@@ -4,17 +4,10 @@
 
 module Blogroll.Html where
 
-import Blogroll.Feed (mergeFeedEntries, parseFeed)
-import Blogroll.Fetch (extractDomain, fetchFavicon, fetchFeed)
-import Blogroll.Type (Blogroll (..), FeedEntry (..))
-import Control.Concurrent.Async (concurrently, mapConcurrently)
-import Control.Exception (SomeException, try)
-import Data.ByteString qualified as BS
-import Data.ByteString.Base64 qualified as Base64
+import Blogroll.Fetch (extractDomain)
+import Blogroll.Type (FeedEntry (..))
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TE
-import Data.Text.IO qualified as TIO
 import Data.Text.Lazy qualified as TL
 import Data.Time (defaultTimeLocale, formatTime)
 import Lucid
@@ -45,52 +38,6 @@ generateFaviconCss favicons =
           "vertical-align: middle; ",
           "}\n"
         ]
-
-loadFontAsBase64 :: FilePath -> IO (Maybe Text)
-loadFontAsBase64 fontPath = do
-  result <- try $ do
-    fontBytes <- BS.readFile fontPath
-    let base64Text = TE.decodeUtf8 $ Base64.encode fontBytes
-    return base64Text
-  case result of
-    Left (_ :: SomeException) -> return Nothing -- TODO handle this situation properly
-    Right base64 -> return $ Just base64
-
--- TODO split this one into fetching and rendering
-renderAll :: Blogroll -> IO ()
-renderAll blogroll = do
-  let urls = blogroll.urls
-  fontBase64 <- loadFontAsBase64 blogroll.pathToFontFile
-
-  results <- mapConcurrently fetchUrlData urls
-
-  let favicons =
-        [ (extractDomain url, base64)
-          | (url, (Just base64, _)) <- zip urls results
-        ]
-  let faviconCss = generateFaviconCss favicons
-
-  let feedEntries =
-        [ case feedResult of
-            Left _err -> []
-            Right cont -> parseFeed url cont
-          | (url, (_, feedResult)) <- zip urls results
-        ]
-
-  let allEntries = mergeFeedEntries feedEntries
-  putStrLn $ "Total entries: " ++ show (length allEntries)
-
-  let recent25 = take 25 allEntries
-  let recentHtml = renderHtml recent25 blogroll.title faviconCss fontBase64
-  let allHtml = renderHtml allEntries (blogroll.title <> " - All Posts") faviconCss fontBase64
-
-  TIO.writeFile "index.html" recentHtml
-  TIO.writeFile "all.html" allHtml
-  putStrLn "Generated index.html (25 recent) and all.html"
-  where
-    fetchUrlData url = do
-      let domain = extractDomain url
-      concurrently (fetchFavicon domain) (fetchFeed url)
 
 renderHtml :: [FeedEntry] -> Text -> Text -> Maybe Text -> Text
 renderHtml entries pageTitle faviconCss maybeFontBase64 =

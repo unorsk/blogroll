@@ -51,6 +51,8 @@ executable blogroll
                        containers,
                        base64-bytestring,
                        lucid2,
+                       async,
+                       network-uri,
                        blogroll
 
     hs-source-dirs:   app
