@@ -3,7 +3,7 @@
 ## 1.0.10 -- 2026-02-09
 
 * Refactored rendering
-* Added optparse-applicaive for parsing command line arguments
+* Added optparse-applicative for parsing command line arguments
 * Fetching icons/feeds concurrently
 
 ## 1.0.9 -- 2025-10-31
