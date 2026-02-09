@@ -20,7 +20,9 @@ loadFontAsBase64 fontPath = do
     let base64Text = TE.decodeUtf8 $ Base64.encode fontBytes
     return base64Text
   case result of
-    Left (_ :: SomeException) -> return Nothing
+    Left (e :: SomeException) -> do
+      putStrLn $ "Failed to load font at " ++ fontPath ++ ": " ++ show e
+      return Nothing
     Right base64 -> return $ Just base64
 
 fetchFeed :: URI -> IO (Either String L8.ByteString)
