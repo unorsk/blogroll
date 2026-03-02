@@ -1,10 +1,11 @@
+https://eugeneyan.com/rss/
+https://huyenchip.com/feed.xml
 https://www.stephendiehl.com/feed.xml
 https://andrewkelley.me/rss.xml
 https://mitchellh.com/feed.xml
 https://jezenthomas.com/feed.xml
 https://www.jeremykun.com/index.xml
 https://www.dbreunig.com/feed.xml
-https://matklad.github.io/feed.xml
 https://mmapped.blog/feed.xml
 https://blog.trailofbits.com/index.xml
 https://blog.cryptographyengineering.com/feed/
