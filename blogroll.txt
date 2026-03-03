@@ -1,3 +1,6 @@
+https://sebastianraschka.com/rss_feed.xml
+https://karpathy.github.io/feed.xml
+https://karpathy.bearblog.dev/feed/
 https://eugeneyan.com/rss/
 https://huyenchip.com/feed.xml
 https://www.stephendiehl.com/feed.xml
