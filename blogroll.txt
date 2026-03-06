@@ -1,3 +1,4 @@
+https://verse.systems/blog/index.xml
 https://sebastianraschka.com/rss_feed.xml
 https://karpathy.github.io/feed.xml
 https://karpathy.bearblog.dev/feed/
