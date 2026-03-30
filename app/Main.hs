@@ -6,13 +6,13 @@ module Main where
 import Blogroll.Feed (mergeFeedEntries, parseFeed)
 import Blogroll.Fetch (extractDomain, fetchFavicon, fetchFeed, loadFontAsBase64)
 import Blogroll.Html (generateFaviconCss, renderHtml)
-import Blogroll.Type (Blogroll (..), PageKind (..), RenderConfig (..))
+import Blogroll.Type (Blogroll (..), PageKind (..), RenderConfig (..), Warning (..), formatWarning)
 import Control.Concurrent.Async (concurrently, mapConcurrently)
-import Data.Maybe (mapMaybe)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import Network.URI (URI, parseURI)
 import Options.Applicative
+import System.IO (hPutStrLn, stderr)
 
 data Options = Options
   { optBlogrollPath :: FilePath,
@@ -32,7 +32,8 @@ optionsParser =
 main :: IO ()
 main = do
   opts <- execParser parserInfo
-  urls <- readUrlsFromFile opts.optBlogrollPath
+  (urls, urlWarnings) <- readUrlsFromFile opts.optBlogrollPath
+  mapM_ (hPutStrLn stderr . formatWarning) urlWarnings
   let blogroll =
         Blogroll
           { title = maybe "Blogroll" id opts.optTitle,
@@ -48,10 +49,16 @@ main = do
         (optionsParser <**> helper)
         (fullDesc <> progDesc "Generate an HTML blogroll from RSS/Atom feed URLs")
 
-readUrlsFromFile :: FilePath -> IO [URI]
+readUrlsFromFile :: FilePath -> IO ([URI], [Warning])
 readUrlsFromFile path = do
   input <- TIO.readFile path
-  return $ mapMaybe (parseURI . T.unpack) $ filter (not . T.null) $ map T.strip $ T.lines input
+  let nonEmpty = filter (not . T.null) $ map T.strip $ T.lines input
+  return $ foldr classifyLine ([], []) nonEmpty
+  where
+    classifyLine line (urls, warnings) =
+      case parseURI (T.unpack line) of
+        Just uri -> (uri : urls, warnings)
+        Nothing -> (urls, InvalidUrl line : warnings)
 
 generateBlogroll :: Blogroll -> IO ()
 generateBlogroll blogroll = do
@@ -64,12 +71,14 @@ generateBlogroll blogroll = do
 
   let faviconCss = generateFaviconCss [(domain, base64) | (url, (Just base64, _)) <- zip urls results, Just domain <- [extractDomain url]]
 
-  let feedEntries =
+  let (feedEntries, feedWarnings) = unzip
         [ case feedResult of
-            Left _err -> []
+            Left err -> ([], [FetchFailed url err])
             Right cont -> parseFeed url cont
         | (url, (_, feedResult)) <- zip urls results
         ]
+
+  mapM_ (hPutStrLn stderr . formatWarning) (concat feedWarnings)
 
   let allEntries = mergeFeedEntries feedEntries
   putStrLn $ "Total entries: " ++ show (length allEntries)
