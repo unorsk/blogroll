@@ -6,7 +6,7 @@ module Main where
 import Blogroll.Feed (mergeFeedEntries, parseFeed)
 import Blogroll.Fetch (extractDomain, fetchFavicon, fetchFeed, loadFontAsBase64)
 import Blogroll.Html (generateFaviconCss, renderHtml)
-import Blogroll.Type (Blogroll (..))
+import Blogroll.Type (Blogroll (..), PageKind (..), RenderConfig (..))
 import Control.Concurrent.Async (concurrently, mapConcurrently)
 import Data.Maybe (mapMaybe)
 import Data.Text qualified as T
@@ -75,8 +75,18 @@ generateBlogroll blogroll = do
   putStrLn $ "Total entries: " ++ show (length allEntries)
 
   let recent = take blogroll.recentCount allEntries
-  let recentHtml = renderHtml recent blogroll.title faviconCss fontBase64
-  let allHtml = renderHtml allEntries (blogroll.title <> " - All Posts") faviconCss fontBase64
+  let recentConfig = RenderConfig
+        { pageKind = RecentPage
+        , pageTitle = blogroll.title
+        , faviconCss = faviconCss
+        , fontBase64 = fontBase64
+        }
+  let allConfig = recentConfig
+        { pageKind = AllPostsPage
+        , pageTitle = blogroll.title <> " - All Posts"
+        }
+  let recentHtml = renderHtml recent recentConfig
+  let allHtml = renderHtml allEntries allConfig
 
   TIO.writeFile "index.html" recentHtml
   TIO.writeFile "all.html" allHtml
