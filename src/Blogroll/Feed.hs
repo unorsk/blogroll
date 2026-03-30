@@ -33,15 +33,10 @@ parseRssEntries siteUrl cursor =
       let title = T.concat $ item $// element "title" &// content
           link = T.concat $ item $// element "link" &// content
           pubDateStr = T.concat $ item $// element "pubDate" &// content
-       in case (parseURI (T.unpack link), parseRssTime (T.unpack pubDateStr)) of
+       in case (parseURI (T.unpack link), tryParseDate rssDateFormats (T.unpack pubDateStr)) of
             (Nothing, _) -> Left $ InvalidEntryLink siteUrl link
             (_, Nothing) -> Left $ InvalidEntryDate siteUrl pubDateStr
             (Just uriLink, Just rssDate) -> Right $ FeedEntry title uriLink rssDate siteUrl
-
-parseRssTime :: String -> Maybe UTCTime
-parseRssTime dateStr =
-  parseTimeM True defaultTimeLocale "%a, %d %b %Y %H:%M:%S %Z" dateStr
-    <|> parseTimeM True defaultTimeLocale "%a, %d %b %Y %H:%M:%S %z" dateStr
 
 parseAtomEntries :: URI -> Cursor -> ([FeedEntry], [Warning])
 parseAtomEntries siteUrl cursor =
@@ -54,16 +49,27 @@ parseAtomEntries siteUrl cursor =
           published = T.concat $ entry $// laxElement "published" &// content
           updated = T.concat $ entry $// laxElement "updated" &// content
           dateStr = if T.null published then updated else published
-       in case (parseURI (T.unpack link), parseAtomTime (T.unpack dateStr)) of
+       in case (parseURI (T.unpack link), tryParseDate atomDateFormats (T.unpack dateStr)) of
             (Nothing, _) -> Left $ InvalidEntryLink siteUrl link
             (_, Nothing) -> Left $ InvalidEntryDate siteUrl dateStr
             (Just uriLink, Just date) -> Right $ FeedEntry title uriLink date siteUrl
 
-parseAtomTime :: String -> Maybe UTCTime
-parseAtomTime dateStr =
-  parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%S%Z" dateStr
-    <|> parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%SZ" dateStr
-    <|> parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%S%z" dateStr
+tryParseDate :: [String] -> String -> Maybe UTCTime
+tryParseDate formats dateStr =
+  foldr (<|>) Nothing [parseTimeM True defaultTimeLocale fmt dateStr | fmt <- formats]
+
+rssDateFormats :: [String]
+rssDateFormats =
+  [ "%a, %d %b %Y %H:%M:%S %Z",
+    "%a, %d %b %Y %H:%M:%S %z"
+  ]
+
+atomDateFormats :: [String]
+atomDateFormats =
+  [ "%Y-%m-%dT%H:%M:%S%Z",
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y-%m-%dT%H:%M:%S%z"
+  ]
 
 mergeFeedEntries :: [[FeedEntry]] -> [FeedEntry]
 mergeFeedEntries = sortBy (comparing (Down . entryDate)) . concat

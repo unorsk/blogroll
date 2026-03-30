@@ -10,7 +10,7 @@ import Blogroll.Type (Blogroll (..), PageKind (..), RenderConfig (..), Warning (
 import Control.Concurrent.Async (concurrently, mapConcurrently)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
-import Network.URI (URI, parseURI)
+import Network.URI (URI, parseURI, uriScheme)
 import Options.Applicative
 import System.IO (hPutStrLn, stderr)
 
@@ -57,7 +57,9 @@ readUrlsFromFile path = do
   where
     classifyLine line (urls, warnings) =
       case parseURI (T.unpack line) of
-        Just uri -> (uri : urls, warnings)
+        Just uri
+          | uriScheme uri `elem` ["http:", "https:"] -> (uri : urls, warnings)
+          | otherwise -> (urls, InvalidUrl line : warnings)
         Nothing -> (urls, InvalidUrl line : warnings)
 
 generateBlogroll :: Blogroll -> IO ()

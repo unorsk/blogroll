@@ -12,6 +12,7 @@ import Data.Text.Encoding qualified as TE
 import Data.Time (diffUTCTime, getCurrentTime)
 import Network.HTTP.Simple (getResponseBody, httpLBS, parseRequest, setRequestHeaders)
 import Network.URI (URI (..), uriRegName)
+import System.IO (hPutStrLn, stderr)
 
 loadFontAsBase64 :: FilePath -> IO (Maybe Text)
 loadFontAsBase64 fontPath = do
@@ -21,7 +22,7 @@ loadFontAsBase64 fontPath = do
     return base64Text
   case result of
     Left (e :: SomeException) -> do
-      putStrLn $ "Failed to load font at " ++ fontPath ++ ": " ++ show e
+      hPutStrLn stderr $ "Failed to load font at " ++ fontPath ++ ": " ++ show e
       return Nothing
     Right base64 -> return $ Just base64
 
@@ -48,8 +49,6 @@ fetchFeed url = do
 extractDomain :: URI -> Maybe Text
 extractDomain url = T.pack . uriRegName <$> uriAuthority url
 
--- TODO this one should have a sort of default icon when it can't fetch the favicon
--- and it should maybe log something out when the fetching fails
 fetchFavicon :: Text -> IO (Maybe Text)
 fetchFavicon domain = do
   let faviconUrl = "https://www.google.com/s2/favicons?domain=" <> domain <> "&sz=128"
@@ -60,5 +59,7 @@ fetchFavicon domain = do
     let base64Text = TE.decodeUtf8 $ Base64.encode $ L8.toStrict imageBytes
     return base64Text
   case result of
-    Left (_ :: SomeException) -> return Nothing
+    Left (e :: SomeException) -> do
+      hPutStrLn stderr $ "Failed to fetch favicon for " ++ T.unpack domain ++ ": " ++ show e
+      return Nothing
     Right base64 -> return $ Just base64
