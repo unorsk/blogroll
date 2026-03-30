@@ -8,6 +8,7 @@ import Blogroll.Fetch (extractDomain, fetchFavicon, fetchFeed, loadFontAsBase64)
 import Blogroll.Html (generateFaviconCss, renderHtml)
 import Blogroll.Type (Blogroll (..), PageKind (..), RenderConfig (..), Warning (..), formatWarning)
 import Control.Concurrent.Async (concurrently, mapConcurrently)
+
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
 import Network.URI (URI, parseURI, uriScheme)
@@ -65,22 +66,31 @@ readUrlsFromFile path = do
 generateBlogroll :: Blogroll -> IO ()
 generateBlogroll blogroll = do
   let urls = blogroll.urls
-  fontBase64 <- case blogroll.pathToFontFile of
-    Just path -> loadFontAsBase64 path
-    Nothing -> return Nothing
 
-  results <- mapConcurrently fetchUrlData urls
+  (fontResult, results) <- concurrently
+    (case blogroll.pathToFontFile of
+      Just path -> Just <$> loadFontAsBase64 path
+      Nothing -> return Nothing)
+    (mapConcurrently fetchUrlData urls)
 
-  let faviconCss = generateFaviconCss [(domain, base64) | (url, (Just base64, _)) <- zip urls results, Just domain <- [extractDomain url]]
+  let (fontBase64, fontWarnings) = case fontResult of
+        Nothing -> (Nothing, [])
+        Just (Left w) -> (Nothing, [w])
+        Just (Right b64) -> (Just b64, [])
+
+  let (faviconResults, feedResults) = unzip results
+  let (faviconWarnings, favicons) = foldr classifyFavicon ([], []) (zip urls faviconResults)
+  let faviconCss = generateFaviconCss favicons
 
   let (feedEntries, feedWarnings) = unzip
         [ case feedResult of
-            Left err -> ([], [FetchFailed url err])
+            Left w -> ([], [w])
             Right cont -> parseFeed url cont
-        | (url, (_, feedResult)) <- zip urls results
+        | (url, feedResult) <- zip urls feedResults
         ]
 
-  mapM_ (hPutStrLn stderr . formatWarning) (concat feedWarnings)
+  let allWarnings = fontWarnings ++ faviconWarnings ++ concat feedWarnings
+  mapM_ (hPutStrLn stderr . formatWarning) allWarnings
 
   let allEntries = mergeFeedEntries feedEntries
   putStrLn $ "Total entries: " ++ show (length allEntries)
@@ -103,8 +113,14 @@ generateBlogroll blogroll = do
   TIO.writeFile "all.html" allHtml
   putStrLn $ "Generated index.html (" ++ show blogroll.recentCount ++ " recent) and all.html"
   where
+    classifyFavicon (url, favResult) (ws, fs) =
+      case (extractDomain url, favResult) of
+        (Just domain, Right base64) -> (ws, (domain, base64) : fs)
+        (_, Left w) -> (w : ws, fs)
+        _ -> (ws, fs) -- no domain, silently skip
+
     fetchUrlData url = do
       let fetchFav = case extractDomain url of
             Just domain -> fetchFavicon domain
-            Nothing -> return Nothing
+            Nothing -> return $ Left $ FaviconFetchFailed "" "no domain"
       concurrently fetchFav (fetchFeed url)

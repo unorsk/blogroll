@@ -40,6 +40,8 @@ data Warning
   | XmlParseFailed URI
   | InvalidEntryLink URI Text
   | InvalidEntryDate URI Text
+  | FaviconFetchFailed Text String
+  | FontLoadFailed FilePath String
   deriving (Show, Eq)
 
 formatWarning :: Warning -> String
@@ -48,3 +50,5 @@ formatWarning (FetchFailed uri err) = "Failed to fetch " ++ show uri ++ ": " ++ 
 formatWarning (XmlParseFailed uri) = "Failed to parse XML from " ++ show uri
 formatWarning (InvalidEntryLink feedUri raw) = "Invalid entry link in " ++ show feedUri ++ ": " ++ T.unpack raw
 formatWarning (InvalidEntryDate feedUri raw) = "Invalid entry date in " ++ show feedUri ++ ": " ++ T.unpack raw
+formatWarning (FaviconFetchFailed domain err) = "Failed to fetch favicon for " ++ T.unpack domain ++ ": " ++ err
+formatWarning (FontLoadFailed path err) = "Failed to load font at " ++ path ++ ": " ++ err
