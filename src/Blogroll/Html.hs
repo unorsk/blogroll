@@ -125,16 +125,19 @@ renderHtml entries config =
 
     renderEntry :: FeedEntry -> Html ()
     renderEntry entry =
-      li_
-        ( do
-            div_
-              ( do
-                  a_
-                    [ href_ (T.pack $ show $ entryLink entry),
-                      class_ (generateDomainCssClass (extractDomain entry.entrySiteUrl))
-                    ]
-                    (toHtml $ entryTitle entry)
-                  span_ [class_ "source"] (toHtml $ "(" <> extractDomain entry.entrySiteUrl <> ")")
-              )
-            div_ [class_ "date"] (toHtml $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate)
-        )
+      let domain = extractDomain entry.entrySiteUrl
+       in li_
+            ( do
+                div_
+                  ( do
+                      a_
+                        [ href_ (T.pack $ show $ entryLink entry),
+                          class_ (maybe "" generateDomainCssClass domain)
+                        ]
+                        (toHtml $ entryTitle entry)
+                      case domain of
+                        Just d -> span_ [class_ "source"] (toHtml $ "(" <> d <> ")")
+                        Nothing -> pure ()
+                  )
+                div_ [class_ "date"] (toHtml $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate)
+            )

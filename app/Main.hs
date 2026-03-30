@@ -62,7 +62,7 @@ generateBlogroll blogroll = do
 
   results <- mapConcurrently fetchUrlData urls
 
-  let faviconCss = generateFaviconCss [(extractDomain url, base64) | (url, (Just base64, _)) <- zip urls results]
+  let faviconCss = generateFaviconCss [(domain, base64) | (url, (Just base64, _)) <- zip urls results, Just domain <- [extractDomain url]]
 
   let feedEntries =
         [ case feedResult of
@@ -93,5 +93,7 @@ generateBlogroll blogroll = do
   putStrLn $ "Generated index.html (" ++ show blogroll.recentCount ++ " recent) and all.html"
   where
     fetchUrlData url = do
-      let domain = extractDomain url
-      concurrently (fetchFavicon domain) (fetchFeed url)
+      let fetchFav = case extractDomain url of
+            Just domain -> fetchFavicon domain
+            Nothing -> return Nothing
+      concurrently fetchFav (fetchFeed url)

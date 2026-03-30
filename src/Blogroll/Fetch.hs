@@ -45,12 +45,8 @@ fetchFeed url = do
     Left e -> return $ Left $ show (e :: SomeException)
     Right body -> return $ Right body
 
-extractDomain :: URI -> Text
-extractDomain url = do
-  let domain1 = uriAuthority url
-   in case domain1 of
-        Just domain -> T.pack $ uriRegName domain
-        Nothing -> T.pack "" -- TODO yet again, I'll fix this later
+extractDomain :: URI -> Maybe Text
+extractDomain url = T.pack . uriRegName <$> uriAuthority url
 
 -- TODO this one should have a sort of default icon when it can't fetch the favicon
 -- and it should maybe log something out when the fetching fails
