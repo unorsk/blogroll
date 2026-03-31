@@ -1,5 +1,9 @@
 # Revision history for blogroll
 
+## 1.0.11 -- 2026-03-30
+
+* Better error handling
+
 ## 1.0.10 -- 2026-02-09
 
 * Refactored rendering

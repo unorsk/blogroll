@@ -2,10 +2,10 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Blogroll.Html where
+module Blogroll.Html (renderHtml, generateFaviconCss, generateDomainCssClass) where
 
 import Blogroll.Fetch (extractDomain)
-import Blogroll.Type (FeedEntry (..))
+import Blogroll.Type (FeedEntry (..), PageKind (..), RenderConfig (..))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
@@ -39,9 +39,9 @@ generateFaviconCss favicons =
           "}\n"
         ]
 
-renderHtml :: [FeedEntry] -> Text -> Text -> Maybe Text -> Text
-renderHtml entries pageTitle faviconCss maybeFontBase64 =
-  let css = generateStyles maybeFontBase64 <> faviconCss
+renderHtml :: [FeedEntry] -> RenderConfig -> Text
+renderHtml entries config =
+  let css = generateStyles config.fontBase64 <> config.faviconCss
    in TL.toStrict $
         renderText $
           doctype_
@@ -55,11 +55,13 @@ renderHtml entries pageTitle faviconCss maybeFontBase64 =
                     )
                   body_
                     ( do
-                        h1_ (toHtml pageTitle)
+                        h1_ (toHtml config.pageTitle)
                         ul_
                           ( do
                               mapM_ renderEntry entries
-                              li_ (a_ [href_ "all.html"] "See all")
+                              case config.pageKind of
+                                RecentPage -> li_ (a_ [href_ "all.html"] "See all")
+                                AllPostsPage -> pure ()
                           )
                     )
               )
@@ -80,7 +82,7 @@ renderHtml entries pageTitle faviconCss maybeFontBase64 =
             <> """
                body {
                  font-family: 'A Very Nice Font', Helvetica, Arial, system-ui, -apple-system, sans-serif;
-                 font-weigth: 400;
+                 font-weight: 400;
                  max-width: 800px;
                  margin: 0 auto;
                  color: #333;
@@ -123,16 +125,19 @@ renderHtml entries pageTitle faviconCss maybeFontBase64 =
 
     renderEntry :: FeedEntry -> Html ()
     renderEntry entry =
-      li_
-        ( do
-            div_
-              ( do
-                  a_
-                    [ href_ (T.pack $ show $ entryLink entry),
-                      class_ (generateDomainCssClass (extractDomain entry.entrySiteUrl))
-                    ]
-                    (toHtml $ entryTitle entry)
-                  span_ [class_ "source"] (toHtml $ "(" <> extractDomain entry.entrySiteUrl <> ")")
-              )
-            div_ [class_ "date"] (toHtml $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate)
-        )
+      let domain = extractDomain entry.entrySiteUrl
+       in li_
+            ( do
+                div_
+                  ( do
+                      a_
+                        [ href_ (T.pack $ show $ entryLink entry),
+                          class_ (maybe "" generateDomainCssClass domain)
+                        ]
+                        (toHtml $ entryTitle entry)
+                      case domain of
+                        Just d -> span_ [class_ "source"] (toHtml $ "(" <> d <> ")")
+                        Nothing -> pure ()
+                  )
+                div_ [class_ "date"] (toHtml $ T.pack $ formatTime defaultTimeLocale "%Y-%m-%d" entry.entryDate)
+            )

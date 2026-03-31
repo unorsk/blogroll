@@ -9,7 +9,7 @@ The RSS reader is automatically deployed to: **https://unorsk.github.io/blogroll
 
 ### Generating the blogroll
 ```
-cabal run blogroll -- blogroll.txt "Test Blogroll" "IBMPlexSans-Regular.woff2"
+cabal run blogroll -- blogroll.txt -t "Test Blogroll" -f "IBMPlexSans-Regular.woff2"
 ```
 
 ### My todo list. Sort of.
