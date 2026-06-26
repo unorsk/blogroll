@@ -20,3 +20,5 @@ https://chrispenner.ca/atom.xml
 https://exploring-better-ways.bellroy.com/rss.xml
 https://secret.club/feed.xml
 https://www.iankduncan.com/rss.xml
+https://blog.torproject.org/feed.xml
+https://blog.torproject.org/event/feed.xml
