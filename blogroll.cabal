@@ -1,7 +1,7 @@
-cabal-version:      3.14
+cabal-version:      3.12
 name:               blogroll
 
-version:            1.0.11
+version:            1.0.12
 license:            MIT
 license-file:       LICENSE
 author:             unorsk
@@ -31,10 +31,8 @@ library
                        time,
                        bytestring,
                        text,
-                       containers,
                        base64-bytestring,
                        network-uri,
-                       async,
                        lucid2
 
   hs-source-dirs:   src/
@@ -46,11 +44,7 @@ executable blogroll
     main-is:          Main.hs
 
     build-depends:    base ^>=4.21.0.0,
-                       bytestring,
                        text,
-                       containers,
-                       base64-bytestring,
-                       lucid2,
                        async,
                        network-uri,
                        optparse-applicative,

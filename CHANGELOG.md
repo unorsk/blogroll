@@ -1,5 +1,15 @@
 # Revision history for blogroll
 
+## 1.0.12 -- 2026-07-10
+
+* Default to the system sans-serif font; a custom font is only embedded when `-f` is passed
+* Fixed Atom entries with multiple `<link>` elements producing broken URLs (now picks the `alternate` link)
+* Fixed the HTML `<title>` being hardcoded to "RSS Reader" instead of the configured title
+* Favicons are fetched once per domain instead of once per feed
+* Accept more date formats (fractional seconds in Atom, minute-precision RSS dates)
+* Added a nix flake for local builds (`nix build` / `nix develop`)
+* Trimmed unused dependencies; fixed the build-from-source fallback in the daily workflow
+
 ## 1.0.11 -- 2026-03-30
 
 * Better error handling
