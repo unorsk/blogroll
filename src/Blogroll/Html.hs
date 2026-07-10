@@ -49,8 +49,9 @@ renderHtml entries config =
               ( do
                   head_
                     ( do
+                        meta_ [charset_ "utf-8"]
                         meta_ [name_ "viewport", content_ "width=device-width, initial-scale=1.0"]
-                        title_ "RSS Reader"
+                        title_ (toHtml config.pageTitle)
                         style_ [] (toHtmlRaw css)
                     )
                   body_
@@ -66,22 +67,29 @@ renderHtml entries config =
                     )
               )
   where
+    systemFontStack :: Text
+    systemFontStack = "system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+
     generateStyles :: Maybe Text -> Text
     generateStyles maybeFontB64 =
-      let fontFace = case maybeFontB64 of
+      let (fontFace, fontStack) = case maybeFontB64 of
             Just fontBase64 ->
-              """@font-face {
-              font-family: 'A Very Nice Font';
-              src: url(data:font/woff2;base64,"""
-                <> fontBase64
-                <> """) format('woff2');
-                     font-weight: 400;
-                   }"""
-            Nothing -> "" -- we don't have font, so no style here
+              ( """@font-face {
+                font-family: 'Custom Font';
+                src: url(data:font/woff2;base64,"""
+                  <> fontBase64
+                  <> """) format('woff2');
+                       font-weight: 400;
+                     }""",
+                "'Custom Font', " <> systemFontStack
+              )
+            Nothing -> ("", systemFontStack)
        in fontFace
             <> """
                body {
-                 font-family: 'A Very Nice Font', Helvetica, Arial, system-ui, -apple-system, sans-serif;
+                 font-family: """
+            <> fontStack
+            <> """;
                  font-weight: 400;
                  max-width: 800px;
                  margin: 0 auto;

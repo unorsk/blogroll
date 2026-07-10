@@ -33,7 +33,7 @@ jobs:
             echo "build_from_source=true" >> $GITHUB_OUTPUT
           else
             DOWNLOAD_URL=$(echo "$RELEASE_DATA" | jq -r '.assets[] | select(.name == "blogroll.tar.gz") | .browser_download_url')
-            
+
             if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
               echo "No blogroll.tar.gz asset found in release, building from source..."
               echo "build_from_source=true" >> $GITHUB_OUTPUT
@@ -56,44 +56,28 @@ jobs:
         run: |
           cabal update
           cabal build --enable-optimization=2
-          cabal install --install-method=copy --installdir=./
+          cabal install --install-method=copy --installdir=./bin
           mkdir -p blogroll
-          cp blogroll blogroll/
-          cp IBMPlexSans-Regular.woff2 blogroll/ || echo "Font file not found, skipping"
+          cp bin/blogroll blogroll/
           tar -czf blogroll.tar.gz blogroll/
 
-      - name: Extract and prepare
+      - name: Generate blogroll HTML
         run: |
           tar -xzf blogroll.tar.gz
+          cp blogroll.txt blogroll/
           cd blogroll
-          ls -la
-
-      - name: Generate RSS feed HTML
-        run: |
-          cd blogroll
-          curl -L https://raw.githubusercontent.com/unorsk/blogroll/refs/heads/main/blogroll.txt -o blogroll.txt
-          ./blogroll blogroll.txt -t "Good Stuff!" -f "IBMPlexSans-Regular.woff2"
-          ls -la
+          ./blogroll blogroll.txt -t "Good Stuff!"
 
           # Ensure we have the required files for GitHub Pages
-          if [ ! -f "index.html" ]; then
-            echo "Error: index.html not generated"
-            exit 1
-          fi
-
-          # Ensure we have the required files for GitHub Pages
-          if [ ! -f "all.html" ]; then
-            echo "Error: all.html not generated"
-            exit 1
-          fi
-
-          # Copy font file to the root if it exists
-          if [ -f "IBMPlexSans-Regular.woff2" ]; then
-            echo "Font file found, keeping it for web serving"
-          fi
+          for f in index.html all.html; do
+            if [ ! -f "$f" ]; then
+              echo "Error: $f not generated"
+              exit 1
+            fi
+          done
 
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
 
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v3

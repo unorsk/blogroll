@@ -23,7 +23,7 @@ jobs:
           cabal-version: "latest"
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cabal/store
@@ -45,7 +45,6 @@ jobs:
         run: |
           mkdir -p release/blogroll
           cp bin/blogroll release/blogroll/
-          cp IBMPlexSans-Regular.woff2 release/blogroll/ || echo "Font file not found, skipping"
           cd release
           tar -czf blogroll.tar.gz blogroll/
 
